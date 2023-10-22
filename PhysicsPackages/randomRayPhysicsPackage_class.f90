@@ -553,7 +553,7 @@ contains
       call timerStart(self % timerTransport)
       intersections = 0
       
-      !$omp parallel do schedule(runtime) reduction(+: intersections)
+      !$omp parallel do schedule(dynamic) reduction(+: intersections)
       do i = 1, self % pop
 
         ! Set seed
@@ -765,9 +765,8 @@ contains
       lenFlt = real(length,defFlt)
       baseIdx = (cIdx - 1) * self % nG
       sourceVec => self % source(baseIdx + 1 : baseIdx + self % nG)
-      scalarVec => self % scalarFlux(baseIdx + 1 : baseIdx + self % nG)
 
-      !$omp simd
+      !$omp simd aligned(totVec)
       do g = 1, self % nG
         attenuate(g) = exponential(totVec(g) * lenFlt)
         delta(g) = (fluxVec(g) - sourceVec(g)) * attenuate(g)
@@ -776,9 +775,11 @@ contains
 
       ! Accumulate to scalar flux
       if (activeRay) then
+        
+        scalarVec => self % scalarFlux(baseIdx + 1 : baseIdx + self % nG)
       
         call OMP_set_lock(self % locks(cIdx))
-        !$omp simd
+        !$omp simd aligned(scalarVec)
         do g = 1, self % nG
           scalarVec(g) = scalarVec(g) + delta(g) 
         end do
@@ -895,7 +896,7 @@ contains
 
     ! Calculate fission source
     fission = 0.0_defFlt
-    !$omp simd reduction(+:fission)
+    !$omp simd reduction(+:fission) aligned(fluxVec)
     do gIn = 1, self % nG
       fission = fission + fluxVec(gIn) * nuFission(gIn)
     end do
@@ -909,7 +910,7 @@ contains
       scatter = 0.0_defFlt
 
       ! Sum contributions from all energies
-      !$omp simd reduction(+:scatter)
+      !$omp simd reduction(+:scatter) aligned(fluxVec)
       do gIn = 1, self % nG
         scatter = scatter + fluxVec(gIn) * scatterVec(gIn)
       end do
