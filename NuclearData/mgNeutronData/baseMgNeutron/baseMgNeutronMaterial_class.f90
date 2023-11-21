@@ -72,6 +72,7 @@ module baseMgNeutronMaterial_class
     class(multiScatterMG), allocatable        :: scatter
     type(fissionMG), allocatable              :: fission
     integer(shortInt)                         :: nG
+    real(defReal), dimension(:), allocatable  :: speed
 
   contains
     ! Superclass procedures
@@ -81,11 +82,13 @@ module baseMgNeutronMaterial_class
     procedure :: getNuFissionXS
     procedure :: getFissionXS
     procedure :: getChi
+    procedure :: getSpeed
     procedure :: getScatterXS
 
     ! Local procedures
     procedure :: init
     procedure :: nGroups
+    procedure :: getCaptureXS
     procedure :: getTotalPtr
     procedure :: getNuFissionPtr
     procedure :: getChiPtr
@@ -168,6 +171,28 @@ contains
   end function getTotalXS
 
   !!
+  !! Return Capture XSs for energy group G
+  !!
+  !! See mgNeutronMaterial documentationfor details
+  !!
+  function getCaptureXS(self, G, rand) result(xs)
+    class(baseMgNeutronMaterial), intent(in) :: self
+    integer(shortInt), intent(in)            :: G
+    class(RNG), intent(inout)                :: rand
+    real(defReal)                            :: xs
+    character(100), parameter :: Here = ' getCaptureXS (baseMgNeutronMaterial_class.f90)'
+
+    ! Verify bounds
+    if (G < 1 .or. self % nGroups() < G) then
+      call fatalError(Here,'Invalid group number: '//numToChar(G)// &
+                           ' Data has only: ' // numToChar(self % nGroups()))
+      xs = ZERO ! Avoid warning
+    end if
+    xs = self % data(CAPTURE_XS, G)
+
+  end function getCaptureXS
+
+  !!
   !! Return NuFission XS for energy group G
   !!
   !! See mgNeutronMaterial documentationfor details
@@ -245,6 +270,31 @@ contains
     end if
 
   end function getChi
+
+  !!
+  !! Return neutron speed for energy group G
+  !!
+  function getSpeed(self, G, rand) result(speed)
+    class(baseMgNeutronMaterial), intent(in) :: self
+    integer(shortInt), intent(in)            :: G
+    class(RNG), intent(inout)                :: rand
+    real(defReal)                            :: speed
+    character(100), parameter :: Here = ' getSpeed (baseMgNeutronMaterial_class.f90)'
+
+    if (allocated(self % speed)) then
+      ! Verify bounds
+      if(G < 1 .or. self % nGroups() < G) then
+        call fatalError(Here,'Invalid group number: '//numToChar(G)// &
+                             ' Data has only: ' // numToChar(self % nGroups()))
+        speed = ZERO ! Avoid warning
+      end if
+    
+      speed = self % speed(G)
+    else
+      speed = ZERO
+    end if
+
+  end function getSpeed
 
   !!
   !! Return scatter XS for incoming energy group Gin and outgoing group Gout
@@ -372,6 +422,19 @@ contains
                             // numToChar(nG)//' is '//numToChar(size(temp)))
       end if
       self % data(NU_FISSION,:) = temp * self % data(FISSION_XS,:)
+    end if
+
+    ! Load neutron speed
+    if (dict % isPresent('speed')) then
+      
+      allocate(self % speed(nG))
+
+      call dict % get(temp, 'speed')
+      if(size(temp) /= nG) then
+        call fatalError(Here,'Speed vector has wong size. Must be: ' &
+                            // numToChar(nG)//' is '//numToChar(size(temp)))
+      end if
+      self % speed = temp 
     end if
 
     ! Calculate total XS

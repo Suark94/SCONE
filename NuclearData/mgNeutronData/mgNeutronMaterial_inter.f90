@@ -51,6 +51,7 @@ module mgNeutronMaterial_inter
     procedure(getNuFissionXS), deferred     :: getNuFissionXS
     procedure(getFissionXS), deferred       :: getFissionXS
     procedure(getChi), deferred             :: getChi
+    procedure(getSpeed), deferred           :: getSpeed
     procedure(getScatterXS), deferred       :: getScatterXS
     procedure                               :: isFissile
     procedure                               :: set
@@ -160,6 +161,27 @@ module mgNeutronMaterial_inter
       class(RNG), intent(inout)            :: rand
       real(defReal)                        :: chi
     end function getChi
+
+    !!
+    !! Return neutron speed in a given group for the material
+    !!
+    !! Args:
+    !!   G [in]       -> Requested energygroup
+    !!   rand [inout] -> Random number generator
+    !!
+    !! Result:
+    !!   speed -> neutron speed
+    !!
+    !! Errors:
+    !!   fatalError if G is out-of-bounds for the stored data
+    !!
+    function getSpeed(self, G, rand) result(speed)
+      import :: mgNeutronMaterial, defReal, shortInt, RNG
+      class(mgNeutronMaterial), intent(in) :: self
+      integer(shortInt), intent(in)        :: G
+      class(RNG), intent(inout)            :: rand
+      real(defReal)                        :: speed
+    end function getSpeed
 
     !!
     !! Return Macroscopic Scatter XSs for ingoing energy Gin and outgoing

@@ -17,6 +17,7 @@ module physicsPackageFactory_func
   use rayVolPhysicsPackage_class,          only : rayVolPhysicsPackage
   use randomRayPhysicsPackage_class,       only : randomRayPhysicsPackage
   use fixedSourceTRRMPhysicsPackage_class, only : fixedSourceTRRMPhysicsPackage
+  use noiseTRRMPhysicsPackage_class,       only : noiseTRRMPhysicsPackage
 !  use dynamPhysicsPackage_class, only : dynamPhysicsPackage
 
   implicit none
@@ -27,12 +28,13 @@ module physicsPackageFactory_func
   ! It is printed if type was unrecognised
   ! NOTE:
   ! For now  it is necessary to adjust trailing blanks so all enteries have the same length
-  character(nameLen),dimension(*),parameter :: AVAILABLE_physicsPackages = [ 'eigenPhysicsPackage          ',&
-                                                                             'fixedSourcePhysicsPackage    ',&
-                                                                             'vizPhysicsPackage            ',&
-                                                                             'randomRayPhysicsPackage      ',&
-                                                                             'rayVolPhysicsPackage         ',&
-                                                                             'fixedSourceTRRMPhysicsPackage']
+  character(nameLen),dimension(*),parameter :: AVAILABLE_physicsPackages = [ 'eigenPhysicsPackage           ',&
+                                                                             'fixedSourcePhysicsPackage     ',&
+                                                                             'vizPhysicsPackage             ',&
+                                                                             'randomRayPhysicsPackage       ',&
+                                                                             'rayVolPhysicsPackage          ',&
+                                                                             'fixedSourceTRRMPhysicsPackage ',&
+                                                                             'noiseTRRMPhysicsPackage       ']
 
   !!
   !! Public interface
@@ -100,6 +102,11 @@ contains
       case('fixedSourceTRRMPhysicsPackage')
         ! Allocate and initialise
         allocate( fixedSourceTRRMPhysicsPackage :: new)
+        call new % init(dict)
+
+      case('noiseTRRMPhysicsPackage')
+        ! Allocate and initialise
+        allocate( noiseTRRMPhysicsPackage :: new)
         call new % init(dict)
 
       case('rayVolPhysicsPackage')

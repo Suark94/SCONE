@@ -1,0 +1,31 @@
+
+numberOfGroups 2; 
+capture ( 0.01998879	0.05166 );
+fission ( 0.0057671  0.10622 );
+nu ( 2.59068	2.59068);
+chi ( 1.0	0.0);
+
+scatteringMultiplicity ( 
+1.0 1.0  
+1.0 1.0  
+); 
+
+P0 (
+0.35128	0.00086471
+0.0	0.39276
+);
+
+speed (1.82304E+07 4.13067E+05); 
+
+delayed {
+
+numberOfPrec 1;
+beta ( 0.00535 );
+lambda (0.0851 );
+
+chi (
+1.0 0.0
+);
+
+}
+

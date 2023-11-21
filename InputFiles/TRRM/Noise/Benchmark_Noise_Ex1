@@ -1,0 +1,234 @@
+type noiseTRRMPhysicsPackage; 
+
+pop      1250; 
+active  2000;  
+inactive 50000;
+entropy 1; 
+dead     20;  
+termination 220;  
+plot 1;
+cache 1;
+XSdata   mg; 
+dataType mg;
+outputFile Benchmark_Noise_Ex1 ;
+
+fluxMap {type multiMap;
+            maps (xax yax);
+            xax { type spaceMap; axis x; grid lin; min -10.71; max 10.71; N 17;}
+            yax { type spaceMap; axis y; grid lin; min -10.71; max 10.71; N 17;}
+}
+!entropyMap {type multiMap;
+!            maps (xax yax);
+!            !xax { type spaceMap; axis x; grid lin; min -10.71; max 10.71; N 17;}
+!            !yax { type spaceMap; axis y; grid lin; min -10.71; max 10.71; N 17;}
+!            xax { type spaceMap; axis x; grid lin; min -10.71; max 10.71; N 1;}
+!            yax { type spaceMap; axis y; grid lin; min -10.71; max 10.71; N 1;}
+!}
+
+noise {
+
+omega 18.8495559215;
+sine 1;
+
+materials {
+
+fuelN {
+
+fixedReal (0.0 -1.0);
+fixedImag (0.0 1.0);
+
+//capture (XXX XXX);
+//fission (0.021 0.021 );
+//scatter (0.034 0.034 );
+
+}
+
+}
+
+}
+                   
+geometry { 
+  type geometryStd; 
+  // ( -x, +x, -y, +y, -z, +z)
+  boundary ( 1 1 1 1 1 1); 
+  graph {type extended;}
+
+  surfaces { 
+             Domain          { id 3; type box; origin (0.0 0.0 0.0); halfwidth (10.79 10.79 10.79);}  	
+  }
+  
+  cells {  }
+  
+  universes { 
+    	root { id 1000; type rootUniverse; border 3; fill u<100>; }  
+    
+    // Pin universes 
+
+    // Infinite moderator
+    pin30 { id 30; type pinUniverse; radii (0.0); fills (water);}      
+    pin20 { id 20; type pinUniverse; radii (0.0); fills (fuel);}      
+    pin10 { id 10; type pinUniverse; radii (0.0); fills (fuelN);}      
+
+// Lattices
+latAll{
+      id 100; 
+      type latUniverse; 
+      origin (0.0 0.0 0.0); 
+      pitch (1.26 1.26 0.0);
+      shape (19 19 0); 
+      padMat water; 
+      map ( 
+2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+2 1 1 1 1 1 2 1 1 2 1 1 2 1 1 1 1 1 2
+2 1 1 1 2 1 1 1 1 1 1 1 1 1 2 1 1 1 2
+2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+2 1 1 2 1 1 2 1 1 2 1 1 2 1 1 2 1 1 2
+2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+2 1 1 2 1 1 2 1 1 2 1 1 2 1 1 2 1 1 2
+2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+2 1 1 1 1 1 1 3 1 1 1 1 1 1 1 1 1 1 2
+2 1 1 2 1 1 2 1 1 2 1 1 2 1 1 2 1 1 2
+2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+2 1 1 1 2 1 1 1 1 1 1 1 1 1 2 1 1 1 2
+2 1 1 1 1 1 2 1 1 2 1 1 2 1 1 1 1 1 2
+2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+2 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 2
+2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
+);
+}
+
+latPin{
+      id 1; 
+      type latUniverse; 
+      origin (0.0 0.0 0.0); 
+      pitch (0.1219 0.1219 0.0);
+      shape (12 12 0); 
+      padMat water; 
+      map ( 
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 20 20 20 20 20 20 30 30 30
+30 30 30 20 20 20 20 20 20 30 30 30
+30 30 30 20 20 20 20 20 20 30 30 30
+30 30 30 20 20 20 20 20 20 30 30 30
+30 30 30 20 20 20 20 20 20 30 30 30
+30 30 30 20 20 20 20 20 20 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+);
+}
+
+
+latMod{
+      id 2; 
+      type latUniverse; 
+      origin (0.0 0.0 0.0); 
+      pitch (0.1219 0.1219 0.0);
+      shape (12 12 0); 
+      padMat water; 
+      map ( 
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+);
+}
+
+latPinN{
+      id 3; 
+      type latUniverse; 
+      origin (0.0 0.0 0.0); 
+      pitch (0.1219 0.1219 0.0);
+      shape (12 12 0); 
+      padMat water; 
+      map ( 
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 10 10 10 10 10 10 30 30 30
+30 30 30 10 10 10 10 10 10 30 30 30
+30 30 30 10 10 10 10 10 10 30 30 30
+30 30 30 10 10 10 10 10 10 30 30 30
+30 30 30 10 10 10 10 10 10 30 30 30
+30 30 30 10 10 10 10 10 10 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+30 30 30 30 30 30 30 30 30 30 30 30
+);
+}
+
+
+} 
+
+}
+
+viz {
+  myVTK {
+    type vtk;
+    what uniqueID; 
+    corner (-10.79 -10.79 -1.0);
+    width (21.58 21.58 1.0);
+    vox (2000 2000 1);
+  }
+  bmpID { 
+    type bmp; 
+    output ID_xy; 
+    what uniqueID; 
+    centre (0.0 0.0 0.0); 
+    axis z; 
+    res (1000 1000);  
+    width (2.52 2.52); }
+  bmp2 { 
+    type bmp; 
+    output material_xy; 
+    what material; 
+    centre (0.0 0.0 0.0); 
+    axis z; 
+    res (2000 2000);  
+    width (21.58 21.58); }
+} 
+
+
+nuclearData {
+  handles { 
+    mg { type baseMgNeutronDatabase; PN P0;} 
+  } 
+  materials { 
+    numberOfGroups 2;
+      
+    water { 
+      temp 300;
+      xsFile ./XS_Noise/water;
+      composition { } 
+   }
+
+    fuelN { 
+       temp 300; 
+       xsFile ./XS_Noise/fuel;
+       composition { }
+    } 
+		
+    fuel {
+       temp 300; 
+       xsFile ./XS_Noise/fuel;
+	composition { }
+    }
+
+	   
+}
+}
+
+

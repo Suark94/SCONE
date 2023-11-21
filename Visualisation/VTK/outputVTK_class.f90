@@ -294,7 +294,7 @@ contains
       write(file,'(A)') 'LOOKUP_TABLE default'
 
       if (self % dataReal(l)) then
-        write(file,'(F0.6)') self % values(l,:,:,:)
+        write(file,'(F0.12)') self % values(l,:,:,:)
       else
         write(file,'(I0)') int(self % values(l,:,:,:),shortInt)
       endif
