@@ -16,6 +16,7 @@ module physicsPackageFactory_func
   use vizPhysicsPackage_class,             only : vizPhysicsPackage
   use rayVolPhysicsPackage_class,          only : rayVolPhysicsPackage
   use randomRayPhysicsPackage_class,       only : randomRayPhysicsPackage
+
 !  use dynamPhysicsPackage_class, only : dynamPhysicsPackage
 
   implicit none
@@ -105,7 +106,6 @@ contains
         call fatalError(Here, 'Unrecognised type of Physics Package : ' // trim(type))
 
     end select
-
   end function new_physicsPackage
 
   !!

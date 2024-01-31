@@ -34,6 +34,8 @@ module fissionMG_class
   !!
   type, public, extends(reactionMG) :: fissionMG
     real(defReal),dimension(:,:),allocatable :: data
+    real(defReal),dimension(:,:),allocatable :: delayData
+    real(defReal),dimension(:,:),allocatable :: chiDelayed
   contains
     ! Superclass procedures
     procedure :: init
@@ -53,6 +55,11 @@ module fissionMG_class
   !! Reaction indices
   !!
   integer(shortInt),parameter :: NU_DAT = 1, CHI_DAT = 2
+  
+  !!
+  !! Delay data indices
+  !!
+  integer(shortInt),parameter :: LAMBDA_DAT = 1, BETA_DAT = 2
 
 contains
 
@@ -94,6 +101,8 @@ contains
     class(fissionMG), intent(inout) :: self
 
     if(allocated(self % data)) deallocate(self % data)
+    if(allocated(self % delayData)) deallocate(self % delayData)
+    if(allocated(self % chiDelayed)) deallocate(self % chiDelayed)
 
   end subroutine kill
 
@@ -207,11 +216,12 @@ contains
   !!   FatalError if chi is not normalised to 1.0 within FP_REL_TOL
   !!
   subroutine buildFromDict(self, dict)
-    class(fissionMG), intent(inout)        :: self
-    class(dictionary), intent(in)          :: dict
-    integer(shortInt)                      :: nG
-    real(defReal)                          :: S
-    real(defReal),dimension(:),allocatable :: temp
+    class(fissionMG), intent(inout)          :: self
+    class(dictionary), intent(in)            :: dict
+    class(dictionary), pointer               :: delayDict
+    integer(shortInt)                        :: nG, nP, p
+    real(defReal)                            :: S
+    real(defReal),dimension(:),allocatable   :: temp
     character(100),parameter :: Here = 'buildFromDict (fissionMG_class.f90)'
 
     ! Get number of groups
@@ -222,7 +232,7 @@ contains
 
     ! Get nu
     call dict % get(temp, 'nu')
-    if(size(temp) /= ng) then
+    if(size(temp) /= nG) then
       call fatalError(Here, 'Invalid number of values of nu. Given: '// numToChar(size(temp)) // &
                             ' Expected: ' // numToChar(nG))
     end if
@@ -230,7 +240,7 @@ contains
 
     ! Get Chi
     call dict % get(temp, 'chi')
-    if(size(temp) /= ng) then
+    if(size(temp) /= nG) then
       call fatalError(Here, 'Invalid number of values of chi. Given: '// numToChar(size(temp)) // &
                             ' Expected: ' // numToChar(nG))
     end if
@@ -242,6 +252,54 @@ contains
       print *,'Chi is not normalised. Relative error wrt ONE:'// numToChar(abs(S-ONE))//&
               ' The normalisation has been adjusted automatically'
       self % data(:,CHI_DAT) = self % data(:,CHI_DAT) / S
+    end if
+
+    ! Build precursor/delayed neutron data if present
+    if( dict % isPresent('delayed')) then
+
+      delayDict => dict % getDictPtr('delayed')
+      
+      ! Get number of precursor groups
+      call delayDict % get(nP, 'numberOfPrec') 
+
+      ! Allocate space
+      allocate(self % delayData(nP, 2))
+      allocate(self % chiDelayed(nP, nG))
+
+      ! Get decay constants
+      call delayDict % get(temp, 'lambda')
+      if(size(temp) /= nP) then
+        call fatalError(Here, 'Invalid number of values of lambda. Given: '// numToChar(size(temp)) // &
+                              ' Expected: ' // numToChar(nP))
+      end if
+      self % delayData(:,LAMBDA_DAT) = temp
+
+      ! Get delayed fractions
+      call delayDict % get(temp, 'beta')
+      if(size(temp) /= nP) then
+        call fatalError(Here, 'Invalid number of values of beta. Given: '// numToChar(size(temp)) // &
+                              ' Expected: ' // numToChar(nP))
+      end if
+      self % delayData(:,BETA_DAT) = temp
+    
+      ! Get delayed fission spectra
+      call delayDict % get(temp, 'chi')
+      if(size(temp) /= nG*nP) then
+        call fatalError(Here, 'Invalid size of delayed chi. Given: '// numToChar(size(temp)) // &
+                              ' Expected: ' // numToChar(nG*nP))
+      end if
+      self % chiDelayed = transpose(reshape(temp,[nG, nP]))
+    
+      ! Check normalisation of each chi
+      do p = 1, nP
+        S = sum(self % chiDelayed(p,:))
+        if( abs(S-ONE) > 0.01 * FP_REL_TOL) then
+          print *,'Delayed chi '//numToChar(p)//' is not normalised. Relative error wrt ONE:'// &
+                  numToChar(abs(S-ONE))//'. The normalisation has been adjusted automatically'
+          self % chiDelayed(p,:) = self % chiDelayed(p,:) / S
+        end if
+      end do
+
     end if
 
   end subroutine buildFromDict

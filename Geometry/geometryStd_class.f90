@@ -219,7 +219,7 @@ contains
 
     ! Find distance to the next surface
     call self % closestDist(dist, surfIdx, level, coords)
-
+    
     if (maxDist < dist) then ! Moves within cell
       call coords % moveLocal(maxDist, coords % nesting)
       event = COLL_EV

@@ -35,6 +35,9 @@ module neutronXsPackages_class
     real(defReal) :: capture          = ZERO
     real(defReal) :: fission          = ZERO
     real(defReal) :: nuFission        = ZERO
+!--> MK 230324
+    real(defReal) :: velocity         = ZERO   
+!<-- MK 230324
   contains
     procedure :: clean => clean_neutronMacroXSs
     procedure :: add   => add_neutronMacroXSs
@@ -88,6 +91,9 @@ contains
     self % capture          = ZERO
     self % fission          = ZERO
     self % nuFission        = ZERO
+!--> MK 230324
+    self % velocity         = ZERO 
+!<-- MK 230324
 
   end subroutine clean_neutronMacroXSs
 

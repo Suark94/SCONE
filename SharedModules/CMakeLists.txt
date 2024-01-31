@@ -10,6 +10,7 @@ add_sources( ./genericProcedures.f90
              ./energyGrid_class.f90
              ./statisticalTests_func.f90
 	     ./exponentialRA_func.f90
+	     ./exponentialRA_TD_func.f90      #TODO Add unit test for this function
              ./timer_mod.f90
              ./charLib_func.f90
              ./openmp_func.f90

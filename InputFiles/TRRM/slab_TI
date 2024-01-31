@@ -1,0 +1,83 @@
+type randomRayPhysicsPackage; 
+
+pop      200; 
+active   500;  
+inactive 400;       // inactive cycles for each timestep
+dead     20;  
+termination 220;  
+//plot 1;
+printFlux 1;
+cache 1;
+XSdata   mg; 
+dataType mg;
+outputFile slab_TRRM_vII2 ;
+tstp 0.000005;      // time step size
+nT 200; //200;             // number of time steps
+initVal 1;          // normalisation of steady state
+tOut 100;           // number of printed time steps
+//window 100;         // width of moving window
+//reduceLines 1;      // reduce printed output lines during run
+
+geometry {
+    type geometryStd;
+    boundary (0 0 1 1 1 1);
+    graph {type extended;}
+
+    surfaces
+    {
+      squareBound { id 1; type box; origin ( 0.0  0.0  0.0); halfwidth (50.00001 10.0 10.0); }
+    }
+
+
+    cells
+    {
+    }
+
+    universes
+    {
+
+      root
+      {
+          id 1;
+          type rootUniverse;
+          border 1;
+          fill u<10>;
+          // fill fuel;
+      }
+      
+      uni3 { id 2; type pinUniverse; radii (0.0); fills (fuel); }
+      
+      uni_lattice { id 10; type latUniverse; shape (100 1 1); pitch (1 100 100); padMat fuel; map (2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2); }
+!      uni_lattice { id 10; type latUniverse; shape (10 1 1); pitch (10 100 100); padMat fuel; map (2 2 2 2 2 2 2 2 2 2); }
+            
+    }
+}
+
+nuclearData {
+
+  handles { 
+//     ce { type aceNeutronDatabase; aceLibrary /home/mak60/Cases/U235_Compr/XSDAT/JEF311.aceXS;}
+     mg { type baseMgNeutronDatabase; PN P0;} 
+  }
+  
+  
+materials { 
+
+    fuel {  
+      temp       273; 
+      composition {
+        92235.03  0.037047; 
+      }  
+      xsFile ../XS/slabXS_DNP;
+    }	 
+
+} 
+  
+}
+
+viz {
+plotBMP { type bmp; centre (0 0 0);  axis z; res (1000 200); output geomZ; what uniqueID; }
+//plotVTK { type vtk; corner (10.0 6.0 2.0); width (20.0 12.0 4.0); vox (4000 120 400); }
+}
+  
+  

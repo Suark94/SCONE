@@ -286,8 +286,11 @@ contains
       end if
 
       ! Load dictionary
+!       print *, 'Test0'
+!       print *, 'Material', i
       call fileToDict(tempDict, path)
       call self % mats(i) % init(tempDict, scatterKey)
+!       print *, 'Test2'
 
     end do
 

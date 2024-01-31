@@ -52,7 +52,6 @@ program scone
   else
     allocate( core, source = new_physicsPackage(input))
   endif
-
   call core % run()
 
   call timerStop(timerIdx)

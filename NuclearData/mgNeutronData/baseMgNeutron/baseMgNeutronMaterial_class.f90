@@ -32,8 +32,13 @@ module baseMgNeutronMaterial_class
   integer(shortInt), parameter, public :: TOTAL_XS      = 1
   integer(shortInt), parameter, public :: IESCATTER_XS  = 2
   integer(shortInt), parameter, public :: CAPTURE_XS    = 3
-  integer(shortInt), parameter, public :: FISSION_XS    = 4
+!   integer(shortInt), parameter, public :: FISSION_XS    = 4
+!   integer(shortInt), parameter, public :: NU_FISSION    = 5
+!   integer(shortInt), parameter, public :: VELOCITY      = 6
+  
+  integer(shortInt), parameter, public :: FISSION_XS    = 6
   integer(shortInt), parameter, public :: NU_FISSION    = 5
+  integer(shortInt), parameter, public :: VELOCITY      = 4
 
   !!
   !! Basic type of MG material data
@@ -82,6 +87,9 @@ module baseMgNeutronMaterial_class
     procedure :: getFissionXS
     procedure :: getChi
     procedure :: getScatterXS
+!--> MK 230324
+    procedure :: getVel
+!<-- MK 230324
 
     ! Local procedures
     procedure :: init
@@ -90,6 +98,9 @@ module baseMgNeutronMaterial_class
     procedure :: getNuFissionPtr
     procedure :: getChiPtr
     procedure :: getScatterPtr
+!--> MK 230324
+    procedure :: getVelPtr
+!<-- MK 230324
 
   end type baseMgNeutronMaterial
 
@@ -134,6 +145,9 @@ contains
     xss % elasticScatter   = ZERO
     xss % inelasticScatter = self % data(IESCATTER_XS, G)
     xss % capture          = self % data(CAPTURE_XS, G)
+!--> MK 230324
+    xss % velocity         = self % data(VELOCITY, G)
+!<-- MK 230324
 
     if(self % isFissile()) then
       xss % fission        = self % data(FISSION_XS, G)
@@ -145,6 +159,30 @@ contains
 
   end subroutine getMacroXSs_byG
 
+!--> MK 230324
+  !!
+  !! Return neutron velocities for energy group G
+  !!
+  !! See mgNeutronMaterial documentationfor details
+  !!
+  function getVel(self, G, rand) result(xs)
+    class(baseMgNeutronMaterial), intent(in) :: self
+    integer(shortInt), intent(in)            :: G
+    class(RNG), intent(inout)                :: rand
+    real(defReal)                            :: xs
+    character(100), parameter :: Here = ' getVel (baseMgNeutronMaterial_class.f90)'
+
+    ! Verify bounds
+    if (G < 1 .or. self % nGroups() < G) then
+      call fatalError(Here,'Invalid group number: '//numToChar(G)// &
+                           ' Data has only: ' // numToChar(self % nGroups()))
+      xs = ZERO ! Avoid warning
+    end if
+    xs = self % data(VELOCITY, G)
+
+  end function getVel 
+!<-- MK 230324
+  
   !!
   !! Return Total XSs for energy group G
   !!
@@ -331,14 +369,18 @@ contains
     if(self % isFissile()) allocate(self % fission)
     if(self % isFissile()) call self % fission % init(deck, macroFission)
 
+!--> MK 230605
     ! Allocate space for data
     if(self % isFissile()) then
-      N = 5
+      N = 6
     else
-      N = 3
+      N = 4
     end if
+!<-- MK 230605
 
     allocate(self % data(N, nG))
+!     print *, 'Data'
+!     print *, self % data
 
     ! Load cross sections
     call dict % get(temp, 'capture')
@@ -347,6 +389,21 @@ contains
                           // numToChar(nG)//' is '//numToChar(size(temp)))
     end if
     self % data(CAPTURE_XS,:) = temp
+!     print*, 'temp capture'
+!     print *, temp
+!     print *, self % data(CAPTURE_XS,:)
+    
+
+
+!--> MK 230324
+    ! Load cross sections
+    call dict % get(temp, 'velocity')
+    if(size(temp) /= nG) then
+      call fatalError(Here,'Capture XSs have wong size. Must be: ' &
+                          // numToChar(nG)//' is '//numToChar(size(temp)))
+    end if
+    self % data(VELOCITY,:) = temp
+!<-- MK 230324
 
     ! Extract values of scattering XS
     if(size(self % scatter % scatterXSs) /= nG) then
@@ -381,6 +438,10 @@ contains
         self % data(TOTAL_XS, i) = self % data(TOTAL_XS, i) + self % data(FISSION_XS, i)
       end if
     end do
+    
+!     print *, 'DATA'
+!     print *, self % data
+!     print *, self % data(CAPTURE_XS,:)
   end subroutine init
 
   !!
@@ -404,6 +465,19 @@ contains
 
   end function nGroups
   
+!--> MK 230324
+  !!
+  !! Return pointer to Total XSs 
+  !!
+  function getVelPtr(self) result(xs)
+    class(baseMgNeutronMaterial), intent(in), target :: self
+    real(defReal), dimension(:), pointer             :: xs
+
+    xs => self % data(VELOCITY, :)
+
+  end function getVelPtr
+!<-- MK 230324
+
   !!
   !! Return pointer to Total XSs 
   !!
