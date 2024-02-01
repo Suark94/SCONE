@@ -34,8 +34,8 @@ geometry {
   graph {type extended;}
 
   surfaces { 
-             //Domain          { id 3; type box; origin (0.0 0.0 0.0); halfwidth (32.13 32.13 32.13);}  	
-             Domain          { id 3; type box; origin (0.0 0.0 0.0); halfwidth (32.13 32.13 100.0);}  	
+             Domain          { id 3; type box; origin (0.0 0.0 0.0); halfwidth (32.13 32.13 32.13);}  	
+             // Domain          { id 3; type box; origin (0.0 0.0 0.0); halfwidth (32.13 32.13 100.0);}  	
   }
   
   cells {  }
@@ -260,51 +260,51 @@ nuclearData {
       
     water { 
       temp 300;
-      xsFile ../XS_C5G7_TRRM2/moder;
+      xsFile ../XS_C5G7_TD/moder;
       composition { } 
    }
    
     reflector { 
       temp 300;
-      xsFile ../XS_C5G7_TRRM2/refl;
+      xsFile ../XS_C5G7_TD/refl;
       composition { } 
    }
 
     mox43 { 
        temp 300; 
-       xsFile ../XS_C5G7_TRRM2/MOX43;
+       xsFile ../XS_C5G7_TD/MOX43;
        composition {  }
    }
 	  
     mox7 { 
        temp 300; 
-       xsFile ../XS_C5G7_TRRM2/MOX7;
+       xsFile ../XS_C5G7_TD/MOX7;
        composition { }
     } 
 		
     mox87 { 
        temp 300; 
-       xsFile ../XS_C5G7_TRRM2/MOX87;
+       xsFile ../XS_C5G7_TD/MOX87;
        composition { }
     } 
 		
     UO2 {
        temp 300; 
-       xsFile ../XS_C5G7_TRRM2/UO2;
+       xsFile ../XS_C5G7_TD/UO2;
 	composition { }
     }
 
     // Fission chamber
     FC {
        temp 300; 
-       xsFile ../XS_C5G7_TRRM2/FC;
+       xsFile ../XS_C5G7_TD/FC;
 	composition { }
     }
     
     // Guide tube
     GT {
        temp 300; 
-       xsFile ../XS_C5G7_TRRM2/GT;
+       xsFile ../XS_C5G7_TD/GT;
 	composition { }
     }
 	   

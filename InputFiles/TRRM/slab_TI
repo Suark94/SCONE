@@ -10,9 +10,9 @@ printFlux 1;
 cache 1;
 XSdata   mg; 
 dataType mg;
-outputFile slab_TRRM_vII2 ;
+outputFile slab_TI;
 tstp 0.000005;      // time step size
-nT 200; //200;             // number of time steps
+nT 200;             // number of time steps
 initVal 1;          // normalisation of steady state
 tOut 100;           // number of printed time steps
 //window 100;         // width of moving window
