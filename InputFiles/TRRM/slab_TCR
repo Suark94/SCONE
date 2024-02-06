@@ -1,4 +1,4 @@
-type randomRayPhysicsPackage; 
+type dynamicRRPhysicsPackage_TCR;   // Select here if TCR or TI method should be used
 
 pop      200; 
 active   500;  
@@ -11,12 +11,13 @@ cache 1;
 XSdata   mg; 
 dataType mg;
 outputFile slab_TCR;
-tstp 0.000005; // changed
-nT 200;  // changed
-nR 0;  // changed
-initVal 1; // changed
-convPrec 0.000001; // changed
-tOut 100;
+tstp 0.000005;        // time step size
+nT 200;               // number of time steps
+//initVal 1;            // normalisation of steady state
+convPrec 0.000002;    // threshold value for convergence
+//window 100;         // width of moving window
+//reduceLines 1;      // reduce printed output lines during run
+tOut 100;             // number of printed time steps
 
 geometry {
     type geometryStd;

@@ -7,5 +7,7 @@ add_sources( ./physicsPackage_inter.f90
              ./vizPhysicsPackage_class.f90
              ./rayVolPhysicsPackage_class.f90
 	     ./randomRayPhysicsPackage_class.f90
+	     ./dynamicRRPhysicsPackage_class_TI.f90
+	     ./dynamicRRPhysicsPackage_class_TCR.f90
              )
              #./dynamPhysicsPackage_class.f90)

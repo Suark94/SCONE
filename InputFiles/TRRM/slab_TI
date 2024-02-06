@@ -1,4 +1,4 @@
-type randomRayPhysicsPackage; 
+type dynamicRRPhysicsPackage_TI;   // Select here if TCR or TI method should be used
 
 pop      200; 
 active   500;  
