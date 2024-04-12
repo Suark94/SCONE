@@ -1,10 +1,16 @@
 type randomRayPhysicsPackage; 
 
-pop      1750; 
-active   2600;  
-inactive 1000; 
-dead     20;  
-termination 220;  
+pop      650;
+active   2000;  
+inactive 400;  
+dead     13;
+termination 628;
+
+//pop      1750; 
+//active   2600; 
+//inactive 1000; 
+//dead     20;  
+//termination 220;  
 plot 0;
 cache 1;
 XSdata   mg; 

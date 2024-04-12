@@ -2,7 +2,7 @@ type dynamicRRPhysicsPackage_TI;   // Select here if TCR or TI method should be 
 
 pop      200; 
 active   500;  
-inactive 400;       // inactive cycles for each timestep
+inactive 400;      // inactive cycles for each timestep
 dead     20;  
 termination 220;  
 //plot 1;
@@ -14,7 +14,8 @@ outputFile slab_TI;
 tstp 0.000005;      // time step size
 nT 200;             // number of time steps
 initVal 1;          // normalisation of steady state
-tOut 100;           // number of printed time steps
+tOut 200;           // number of printed time steps
+isotropicDeriv 1;   // use fully isotropic approximation for time derivative
 //window 100;         // width of moving window
 //reduceLines 1;      // reduce printed output lines during run
 

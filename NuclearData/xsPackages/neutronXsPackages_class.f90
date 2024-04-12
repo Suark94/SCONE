@@ -38,6 +38,9 @@ module neutronXsPackages_class
 !--> MK 230324
     real(defReal) :: velocity         = ZERO   
 !<-- MK 230324
+!--> MK 240411
+    real(defReal) :: nu         = ZERO   
+!<-- MK 240411
   contains
     procedure :: clean => clean_neutronMacroXSs
     procedure :: add   => add_neutronMacroXSs

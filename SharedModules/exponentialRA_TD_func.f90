@@ -28,7 +28,7 @@ module exponentialRA_TD_func
 contains
 
   !!
-  !! Computes x = 1 - exp(-tau) for use in MoC calcs
+  !! Computes x = (1 - exp(-tau))/tau for use in MoC calcs
   !! Tau is the optical distance
   !!
   elemental function exponential_TD(tau) result(x)

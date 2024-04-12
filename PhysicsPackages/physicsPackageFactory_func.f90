@@ -15,9 +15,9 @@ module physicsPackageFactory_func
   use fixedSourcePhysicsPackage_class,     only : fixedSourcePhysicsPackage
   use vizPhysicsPackage_class,             only : vizPhysicsPackage
   use rayVolPhysicsPackage_class,          only : rayVolPhysicsPackage
-  use randomRayPhysicsPackage_class,       only : randomRayPhysicsPackage
-  use dynamicRRPhysicsPackage_class_TI,    only : dynamicRRPhysicsPackage_TI
-  use dynamicRRPhysicsPackage_class_TCR,   only : dynamicRRPhysicsPackage_TCR
+  use randomRayPhysicsPackage_class_org,   only : randomRayPhysicsPackage
+  use dynamicRRPhysicsPackage_class_TI,    only : dynamicRRPhysicsPackage_TI        !TODO
+  use dynamicRRPhysicsPackage_class_TCR,   only : dynamicRRPhysicsPackage_TCR       !TODO
 
 !  use dynamPhysicsPackage_class, only : dynamPhysicsPackage
 
@@ -35,7 +35,7 @@ module physicsPackageFactory_func
                                                                              'randomRayPhysicsPackage      ',&
                                                                              'rayVolPhysicsPackage         ',&
                                                                              'dynamicRRPhysicsPackage_TI   ',&  !TODO
-                                                                             'dynamicRRPhysicsPackage_TCR  ']   !TODO
+                                                                             'dynamicRRPhysicsPackage_TCR  ']  !TODO
 
   !!
   !! Public interface
@@ -54,7 +54,7 @@ contains
     character(nameLen)                    :: type
     character(100),parameter :: Here = 'new_physicsPackage (physicsPackageFactory_func.f90)'
 
-    ! Obtain string that specifies type to be built
+    ! Obtain string that specifies type to be builtrandomRayPhysicsPackage
     call dict % get(type,'type')
 
     ! Allocate approperiate subclass of physicsPackage

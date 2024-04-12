@@ -1,0 +1,1 @@
+/usr/bin/gfortran   -std=f2008 -O3 -g -pedantic -Wall -Wno-unused-dummy-argument -cpp -march=native -fopenmp CMakeFiles/scone.out.dir/Apps/scone.f90.o  -o scone.out  libscone.a /usr/lib/x86_64-linux-gnu/liblapack.so /usr/lib/x86_64-linux-gnu/libf77blas.so /usr/lib/x86_64-linux-gnu/libatlas.so 

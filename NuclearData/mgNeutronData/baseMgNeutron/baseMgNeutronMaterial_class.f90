@@ -35,10 +35,16 @@ module baseMgNeutronMaterial_class
 !   integer(shortInt), parameter, public :: FISSION_XS    = 4
 !   integer(shortInt), parameter, public :: NU_FISSION    = 5
 !   integer(shortInt), parameter, public :: VELOCITY      = 6
-  
-  integer(shortInt), parameter, public :: FISSION_XS    = 6
-  integer(shortInt), parameter, public :: NU_FISSION    = 5
+!   
+!   integer(shortInt), parameter, public :: FISSION_XS    = 6
+!   integer(shortInt), parameter, public :: NU_FISSION    = 5
+!   integer(shortInt), parameter, public :: VELOCITY      = 4
+!--> MK 240411
+  integer(shortInt), parameter, public :: FISSION_XS    = 7
+  integer(shortInt), parameter, public :: NU_FISSION    = 6
+  integer(shortInt), parameter, public :: NU            = 5
   integer(shortInt), parameter, public :: VELOCITY      = 4
+!<-- MK 240411
 
   !!
   !! Basic type of MG material data
@@ -90,6 +96,9 @@ module baseMgNeutronMaterial_class
 !--> MK 230324
     procedure :: getVel
 !<-- MK 230324
+!--> MK 240411
+    procedure :: getNu
+!<-- MK 240411
 
     ! Local procedures
     procedure :: init
@@ -148,6 +157,9 @@ contains
 !--> MK 230324
     xss % velocity         = self % data(VELOCITY, G)
 !<-- MK 230324
+!--> MK 240411
+    xss % nu               = self % data(NU, G)
+!<-- MK 240411
 
     if(self % isFissile()) then
       xss % fission        = self % data(FISSION_XS, G)
@@ -182,6 +194,34 @@ contains
 
   end function getVel 
 !<-- MK 230324
+
+!--> MK 240411
+  !!
+  !! Return neutron velocities for energy group G
+  !!
+  !! See mgNeutronMaterial documentationfor details
+  !!
+  function getNu(self, G, rand) result(xs)
+    class(baseMgNeutronMaterial), intent(in) :: self
+    integer(shortInt), intent(in)            :: G
+    class(RNG), intent(inout)                :: rand
+    real(defReal)                            :: xs
+    character(100), parameter :: Here = ' getNu (baseMgNeutronMaterial_class.f90)'
+
+    ! Verify bounds
+    if (self % isFissile()) then
+      if(G < 1 .or. self % nGroups() < G) then
+        call fatalError(Here,'Invalid group number: '//numToChar(G)// &
+                             ' Data has only: ' // numToChar(self % nGroups()))
+        xs = ZERO ! Avoid warning
+      end if
+      xs = self % data(NU, G)
+    else
+      xs = ZERO
+    end if
+
+  end function getNu 
+!<-- MK 240411
   
   !!
   !! Return Total XSs for energy group G
@@ -428,6 +468,9 @@ contains
         call fatalError(Here,'Nu vector has wong size. Must be: ' &
                             // numToChar(nG)//' is '//numToChar(size(temp)))
       end if
+!--> MK 240411
+      self % data(NU,:) = temp
+!<-- MK 240411
       self % data(NU_FISSION,:) = temp * self % data(FISSION_XS,:)
     end if
 

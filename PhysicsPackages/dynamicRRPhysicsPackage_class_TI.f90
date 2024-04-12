@@ -11,6 +11,7 @@ module dynamicRRPhysicsPackage_class_TI
   use outputFile_class,               only : outputFile
   use rng_class,                      only : RNG
   use physicsPackage_inter,           only : physicsPackage
+  use transient_class,                only : transientData
 
   ! Timers
   use timer_mod,                      only : registerTimer, timerStart, timerStop, &
@@ -106,6 +107,7 @@ module dynamicRRPhysicsPackage_class_TI
   !!     #initVal 1;#          // Optional normalisation value for total flux in steady state
   !!     #window 100;#         // Optional width of moving window over which flux values are averaged for calculating RMS error
   !!     #reduceLines 1;#      // Optionally reduce printed output lines during run
+  !!     #isotropicDeriv 1;#   // Optionally use isotropic approximation for entire flux time derivative
 !<-- MK 240205
   !!     #seed 86868;#         // Optional RNG seed
   !!     #cache 1;#            // Optionally use distance caching to accelerate ray tracing
@@ -115,6 +117,7 @@ module dynamicRRPhysicsPackage_class_TI
   !!
   !!     geometry {<Geometry Definition>}
   !!     nuclearData {<Nuclear data definition>}
+  !!     transient {<Transient data definition>}
   !!   }
   !!
   !! Private Members
@@ -156,7 +159,7 @@ module dynamicRRPhysicsPackage_class_TI
   !!   keff        -> Estimated value of keff
   !!   keffScore   -> Vector holding cumulative keff score and keff^2 score
   !!   scalarFlux  -> Array of scalar flux values of length = nG * nCells
-  !!   prevFlux    -> Array of previous scalar flux values of length = nG * nCells
+  !!   prevFlux    -> Array of previous scalar flux values of length = nG * nCells 
   !!   fluxScore   -> Array of scalar flux values and squared values to be reported 
   !!                  in results, dimension =  [nG * nCells, 2]
   !!   source      -> Array of neutron source values of length = nG * nCells
@@ -168,18 +171,52 @@ module dynamicRRPhysicsPackage_class_TI
   !!   locks       -> OpenMP locks used when writing to scalar flux during transport
 !--> MK 230601
   !!   vel         -> Local neutron velocity vector
+  !!   nu          -> Local average number of neutrons released per fission event
   !!   chiP        -> Local prompt chi vector 
   !!   chiD        -> Local delayed chi vector
   !!   lambda      -> Local DNP decay constants
   !!   beta        -> Local DNP group fractions
+  !!   omega 0, omegaN, omega_1, omega_2 --> Auxiliary values stored for DNP derivative solution
+  !!
   !!   nT          -> Number of time steps
+  !!   nP          -> Number of DNP groups
   !!   tstp        -> Time step size
   !!   initVal     -> Initialisation value for scalar flux
   !!   window      -> Width of moving window for Shannon entropy
-  !!   reduceLines -> reduce output lines that are printed while running
-  !!   totalIt     -> total number of iterations in transient calculation
+  !!   reduceLines -> Reduce output lines that are printed while running?
+  !!   isotropic   -> Use isotropic approximation for entire flux time derivative?
+  !!   totalIt     -> Total number of iterations in transient calculation to be reported in results
   !!   nTOut       -> Number of time steps for which results are printed
   !!   outInterval -> Interval of time steps at the end of which result is printed (Print every 'outInterval' time steps)
+  !!
+  !!   fluxHist    -> Array of accumulated and averaged scalar flux values of timestep n-1,
+  !!                  dimension = [nG * nCells]
+  !!   prevFission_1 -> Array of accumulated and averaged fission source values * keff of timestep n-1 to be used 
+  !!                    for DNP calculation, dimension = [nCells]
+  !!   prevFission_2 -> Array of accumulated and averaged fission source values * keff of timestep n-2 to be used 
+  !!                    for DNP calculation, dimension = [nCells]
+  !!   fissionScore  -> Array of accumulated and (eventually) averaged fission source values * keff of current timestep n to be used
+  !!                    for DNP calculation, dimension = [nCells]
+  !!   fissionSource -> Array of fission source values * keff , dimension = [nCells]
+  !!   dnpScores   -> Array of accumulated and (eventually) averaged DNP values of current timestep n,
+  !!                  dimension = [nP * nCells]
+  !!   dnp         -> Array of DNP values of current timestep n, dimension = [nP * nCells]
+  !!   prevDnp     -> Array of accumulated and averaged DNP values of timestep n-1,
+  !!                  dimension = [nP * nCells]
+  !!
+  !!   scalarFluxTD -> same quantities as above but for time-dependent calculation
+  !!   prevFluxTD  
+  !!   fluxScoreTD
+  !!   sourceTD 
+  !!   fluxHistTD 
+  !!   prevFission_TD1 
+  !!   prevFission_TD2 
+  !!   fissionScoreTD
+  !!   fissionSourceTD
+  !!   dnpScoresTD 
+  !!   dnpTD
+  !!   prevDnpTD
+  !!
 !<-- MK 230601
   !!
   !! Interface:
@@ -201,7 +238,6 @@ module dynamicRRPhysicsPackage_class_TI
 !---> DNP 230918
     integer(shortInt)                     :: nP = 0
 !<-- DNP 230918
-
 
     ! Settings
     real(defReal)      :: termination = ZERO
@@ -230,6 +266,7 @@ module dynamicRRPhysicsPackage_class_TI
     integer(shortInt)  :: totalIt      = 0         
     integer(shortInt)  :: nTOut       = 0
     logical(defBool)   :: reduceLines = .false.
+    logical(defBool)   :: isotropic = .false.
 !<-- MK 230718   
 
     ! Data space - absorb all nuclear data for speed
@@ -237,27 +274,50 @@ module dynamicRRPhysicsPackage_class_TI
     real(defFlt), dimension(:), allocatable     :: nuSigmaF
     real(defFlt), dimension(:), allocatable     :: sigmaS
     real(defFlt), dimension(:), allocatable     :: chi
-!--> DNP 230918
+    real(defFlt), dimension(:), allocatable     :: nu
+
     real(defFlt), dimension(:), allocatable     :: chiP
     real(defFlt), dimension(:), allocatable     :: chiD
     real(defFlt), dimension(:), allocatable     :: lambda
     real(defFlt), dimension(:), allocatable     :: beta
-    real(defReal), dimension(:), allocatable    :: DNPScores
-    real(defFlt), dimension(:), allocatable     :: DNP
-    real(defFlt), dimension(:), allocatable     :: prevDNP
-!<-- DNP 230918
-!--> MK 230823
+
+    real(defFlt), dimension(:), allocatable     :: omega0
+    real(defFlt), dimension(:), allocatable     :: omegaN
+    real(defFlt), dimension(:), allocatable     :: omega_1
+    real(defFlt), dimension(:), allocatable     :: omega_2
+
     real(defFlt), dimension(:), allocatable     :: vel
-    real(defFlt), dimension(:), allocatable     :: fluxHist
-!<-- MK 230823
 
     ! Results space
     real(defFlt)                                :: keff
     real(defReal), dimension(2)                 :: keffScore  
+    
+    real(defFlt), dimension(:), allocatable     :: scalarFluxTD
+    real(defFlt), dimension(:), allocatable     :: prevFluxTD
+    real(defReal), dimension(:,:), allocatable  :: fluxScoresTD
+    real(defFlt), dimension(:), allocatable     :: fluxHistTD
+    real(defFlt), dimension(:), allocatable     :: sourceTD
+    real(defFlt), dimension(:), allocatable     :: prevFissionTD_1
+    real(defFlt), dimension(:), allocatable     :: prevFissionTD_2
+    real(defReal), dimension(:), allocatable    :: fissionScoreTD
+    real(defFlt), dimension(:), allocatable     :: fissionSourceTD
+    real(defReal), dimension(:), allocatable    :: dnpScoresTD
+    real(defFlt), dimension(:), allocatable     :: dnpTD
+    real(defFlt), dimension(:), allocatable     :: prevDnpTD
+
     real(defFlt), dimension(:), allocatable     :: scalarFlux
     real(defFlt), dimension(:), allocatable     :: prevFlux
-    real(defReal), dimension(:,:), allocatable  :: fluxScores
+    real(defReal), dimension(:), allocatable    :: fluxScores
+    real(defFlt), dimension(:), allocatable     :: fluxHist
     real(defFlt), dimension(:), allocatable     :: source
+    real(defFlt), dimension(:), allocatable     :: prevFission_1
+    real(defFlt), dimension(:), allocatable     :: prevFission_2
+    real(defReal), dimension(:), allocatable    :: fissionScore
+    real(defFlt), dimension(:), allocatable     :: fissionSource
+    real(defReal), dimension(:), allocatable    :: dnpScores
+    real(defFlt), dimension(:), allocatable     :: dnp
+    real(defFlt), dimension(:), allocatable     :: prevDnp
+
     real(defReal), dimension(:), allocatable    :: volume
     real(defReal), dimension(:), allocatable    :: volumeTracks 
 
@@ -285,11 +345,13 @@ module dynamicRRPhysicsPackage_class_TI
     ! Private procedures
     procedure, private :: cycles
     procedure, private :: initialiseRay
-    procedure, private :: transportSweep_steady
-    procedure, private :: transportSweep_transient
+    procedure, private :: transportSweep_isotropic
+    procedure, private :: transportSweep
     procedure, private :: calculateEntropy
+    procedure, private :: sourceUpdateKernel_TD
     procedure, private :: sourceUpdateKernel
     procedure, private :: calculateKeff
+    procedure, private :: normaliseFluxAndVolume_TD
     procedure, private :: normaliseFluxAndVolume
     procedure, private :: resetFluxes
     procedure, private :: accumulateFluxAndKeffScores
@@ -298,6 +360,7 @@ module dynamicRRPhysicsPackage_class_TI
     procedure, private :: printSettings
     procedure, private :: printTransientFlux
     procedure, private :: printFissionRate
+    procedure, private :: updatePreviousQuantities
 
   end type dynamicRRPhysicsPackage_TI
 
@@ -312,8 +375,15 @@ contains
     class(dynamicRRPhysicsPackage_TI), intent(inout) :: self
     class(dictionary), intent(inout)              :: dict
 !--> MK 230718
-    integer(shortInt)                             :: seed_temp, i, g, g1, m, t, nP, nPNew, p, idx0
+    integer(shortInt)                             :: seed_temp, i, g, g1, m, t, nP, nPNew, p, idx0, m2
     real(defReal)                                 :: tstpReal, initReal, outTemp
+    type(transientData)                           :: variations      
+    integer(shortInt)                             :: tStart, tEnd, baseIdx0, baseIdx1, baseIdx, tCnt
+    real(defFlt)                                  :: magnitude
+    character(nameLen)                            :: variationType, xsName
+    real(defFlt), dimension(:), allocatable       :: xsType
+    real(defReal)                                 :: kappa0, kappa1, kappa2
+    real(defFlt), dimension(:), allocatable       :: origXS, startXS          
 !<-- MK 230718
     integer(longInt)                              :: seed
     character(10)                                 :: time
@@ -324,11 +394,11 @@ contains
     character(nameLen)                            :: geomName, graphType, nucData
     class(geometry), pointer                      :: geom
     type(outputFile)                              :: test_out
-    class(baseMgNeutronMaterial), pointer         :: mat
-    class(materialHandle), pointer                :: matPtr
+    class(baseMgNeutronMaterial), pointer         :: mat, mat2
+    class(materialHandle), pointer                :: matPtr, matPtr2
 !--> DNP 230918
     class(fissionMG), pointer                     :: fiss
-    real(defFlt)                                  :: omega, timeXS
+    real(defFlt)                                  :: omega, timeXS, velInv
 !<-- DNP 230918
     character(100), parameter :: Here = 'init (dynamicRRPhysicsPackage_class_TI.f90)'
 
@@ -348,6 +418,7 @@ contains
     if (self % window > self % inactive) call fatalError(Here,&
             'Moving window must be smaller then number of inactive cycles!')
  
+    ! Load number of timesteps printed for output and determine output interval
     call dict % get(self % nTOut, 'tOut')
     outTemp = real(self % nT / self % nTOut, defFlt)
     self % outInterval = NINT(outTemp)
@@ -361,7 +432,11 @@ contains
         self % nT = self % nT + 1 
     end if
     
+    ! Reduce number of ouput lines?
     call dict % getOrDefault(self % reduceLines, 'reduceLines', .false.)
+    
+    ! Use isotropic approximation for entire time derivative?
+    call dict % getOrDefault(self % isotropic, 'isotropicDeriv', .false.)
 !<-- MK 230718   
     
     ! Perform distance caching?
@@ -508,19 +583,34 @@ contains
     ! Store number of cells in geometry for convenience
     self % nCells = self % geom % numberOfCells()
 
+!--> MK 240403
     ! Allocate results space
-!--> MK 230823
+    allocate(self % scalarFluxTD(self % nCells * self % nG))
+    allocate(self % prevFluxTD(self % nCells * self % nG))
+    allocate(self % fluxScoresTD(self % nCells * self % nG, 2))
+    allocate(self % sourceTD(self % nCells * self % nG))
+    allocate(self % fluxHistTD(self % nCells * self % nG))
+    allocate(self % prevFissionTD_1(self % nCells))
+    allocate(self % prevFissionTD_2(self % nCells)) 
+    allocate(self % fissionScoreTD(self % nCells))
+    allocate(self % fissionSourceTD(self % nCells))
+
     allocate(self % scalarFlux(self % nCells * self % nG))
     allocate(self % prevFlux(self % nCells * self % nG))
-    allocate(self % fluxScores(self % nCells * self % nG, 2))
-    allocate(self % fluxHist(self % nCells * self % nG))
+    allocate(self % fluxScores(self % nCells * self % nG))
     allocate(self % source(self % nCells * self % nG))
-!<-- MK 230823
+    allocate(self % fluxHist(self % nCells * self % nG))
+    allocate(self % prevFission_1(self % nCells))
+    allocate(self % prevFission_2(self % nCells)) 
+    allocate(self % fissionScore(self % nCells))
+    allocate(self % fissionSource(self % nCells))
+
     allocate(self % volume(self % nCells))
     allocate(self % volumeTracks(self % nCells))
     allocate(self % cellHit(self % nCells))
     allocate(self % cellFound(self % nCells))
     allocate(self % cellPos(self % nCells, 3))
+!<-- MK 240403
     
     ! Set active length traveled per iteration
     self % lengthPerIt = (self % termination - self % dead) * self % pop
@@ -539,8 +629,10 @@ contains
     allocate(self % sigmaT(self % nMat * self % nG * self % nT))
     allocate(self % nuSigmaF(self % nMat * self % nG * self % nT))
     allocate(self % chi(self % nMat * self % nG))
+    allocate(self % nu(self % nMat * self % nG))
     allocate(self % sigmaS(self % nMat * self % nG * self % nG * self % nT))
-    allocate(self % vel(self % nMat * self % nG))
+!     allocate(self % vel(self % nMat * self % nG))
+    allocate(self % vel(self % nMat * self % nG * self % nT))   !TODO changed
 !<-- MK 230307
 
 !--> MK 230307
@@ -553,10 +645,20 @@ contains
       mat     => baseMgNeutronMaterial_CptrCast(matPtr)
       do g = 1, self % nG
         self % chi(self % nG * (m - 1) + g) = real(mat % getChi(g, self % rand),defFlt)
-        if (self % nT > 1) then 
-            self % vel(self % nG * (m - 1) + g) = real(mat % getVel(g, self % rand),defFlt)
-        end if
+!--> MK 240411 !TODO new
+        self % nu(self % nG * (m - 1) + g) = real(mat % getNu(g, self % rand),defFlt)
+!         if (mat % getFissionXS(g, self % rand) /= ZERO) then
+!             self % nu(self % nG * (m - 1) + g) = &
+!                 real(mat % getNuFissionXS(g, self % rand) / mat % getFissionXS(g, self % rand),defFlt)
+!         else
+!             self % nu(self % nG * (m - 1) + g) = ZERO
+!         end if
+!         if (self % nT > 1) then 
+!             self % vel(self % nG * (m - 1) + g) = real(mat % getVel(g, self % rand),defFlt)
+!         end if
+!<-- MK 240411 !TODO new
         do t = 1, self % nT
+            self % vel(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = real(mat % getVel(g, self % rand),defFlt) !TODO changed
             self % sigmaT(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = real(mat % getTotalXS(g, self % rand),defFlt) 
             self % nuSigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
             real(mat % getNuFissionXS(g, self % rand),defFlt) 
@@ -586,19 +688,131 @@ contains
       fiss => null()
     end do
 !<-- DNP 230918
+
+!--> MK 240228
+    ! Read transient data           !TODO This is probably very ugly
+    call variations % init(dict % getDictPtr('transient'))
     
-!--> MK 230718
-    do m = 1, self % nMat       !TODO This is only provisional
-      matPtr  => self % mgData % getMaterial(m)
-      mat     => baseMgNeutronMaterial_CptrCast(matPtr)
-      do g = 1, self % nG
-        do t = 2, self % nT
-            self % nuSigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
-            real(mat % getNuFissionXS(g, self % rand)*1.001,defFlt) 
+    do i = 1, size(variations % xsArr)
+        m = variations % matArr(i)
+        matPtr  => self % mgData % getMaterial(m)
+        mat     => baseMgNeutronMaterial_CptrCast(matPtr)
+        
+        tCnt = 0
+        tStart = variations % timeStartArr(i) + 1 !To account for steady-state at beginning
+        tEnd = variations % timeEndArr(i) + 1
+        if (tEnd .le. tStart) tEnd = self % nT  !or flag error
+        
+        magnitude = variations % magnitudeArr(i)        !magnitude in terms of original XS
+        variationType = variations % typeArr(i)
+        xsName = variations % xsArr(i)
+        
+        select case(xsName)
+            case('fission')
+                allocate (xsType(size(self % nuSigmaF)))        !Do they need to be deallocated
+                xsType = self % nuSigmaF
+            case('total')
+                allocate (xsType(size(self % sigmaT)))
+                xsType = self % sigmaT
+            case('scatter')
+                allocate (xsType(size(self % sigmaS)))
+                xsType = self % sigmaS
+        end select
+        
+        baseIdx0 = self % nG * self % nT * (m - 1)
+        baseIdx1 = self % nG * self % nT * (m - 1) + (tStart - 2) * self % nG
+        
+        if (xsName == 'scatter') then
+            baseIdx0 = self % nG * baseIdx0
+            baseIdx1 = self % nG * baseIdx1
+            
+            allocate (origXS(self % nG * self % nG))
+            allocate (startXS(self % nG * self % nG))
+            origXS = xsType(baseIdx0 + 1 : baseIdx0 + self % nG * self % nG)
+            startXS = xsType(baseIdx1 + 1 : baseIdx1 + self % nG * self % nG)
+        else
+            allocate (origXS(self % nG))
+            allocate (startXS(self % nG))        
+            origXS = xsType(baseIdx0 + 1 : baseIdx0 + self % nG) 
+            startXS = xsType(baseIdx1 + 1 : baseIdx1 + self % nG)
+        end if
+
+        print *
+        write(*, '(A,A,A,A,A,E16.9)') 'XS (', trim(xsName), ' ', trim(mm_matName(m)) , ') in Group 1 before variation:' &
+            , xsType(baseIdx1 + 1)
+    
+        do t = tStart, tEnd
+        
+            baseIdx = self % nG * self % nT * (m - 1) + (t - 1) * self % nG
+            
+            if (xsName == 'scatter') baseIdx = self % nG * baseIdx
+
+            select case(variationType)
+            
+                case('step')
+                    do g = 1, self % nG
+                        if (xsName == 'scatter') then
+                            do g1 = 1, self % nG
+                                xsType(baseIdx + self % nG * (g - 1) + g1) = startXS(self % nG * (g - 1) + g1) + &
+                                    magnitude * origXS(self % nG * (g - 1) + g1)
+                            end do                
+                        else
+                            xsType(baseIdx + g) = startXS(g) + magnitude * origXS(g)                       
+                        end if
+                    end do
+                    
+                case('ramp')
+                    tCnt = tCnt + 1
+                    timeXS = tCnt * self % tstp
+                    do g = 1, self % nG
+                        if (xsName == 'scatter') then
+                            do g1 = 1, self % nG
+                                xsType(baseIdx + self % nG * (g - 1) + g1) = startXS(self % nG * (g - 1) + g1) + & 
+                                    magnitude * timeXS * origXS(self % nG * (g - 1) + g1)
+                            end do                
+                        else
+                            xsType(baseIdx + g) = startXS(g) + magnitude * timeXS * origXS(g)
+                        end if
+                    end do
+            
+            end select
+            
+             if (t == tStart) write(*, '(A,A,A,A,A,F9.6,A,E16.9)') 'XS (', trim(xsName), ' ', trim(mm_matName(m)),&
+                ') in Group 1 at beginning of variation (t = ', (tStart - 1)*self % tstp, ' s): ', xsType(baseIdx + 1)
+             if (t == tEnd) write(*, '(A,A,A,A,A,F9.6,A,E16.9)') 'XS (', trim(xsName), ' ', trim(mm_matName(m)),&
+                ') in Group 1 at end of variation (t = ', (tEnd - 1)*self % tstp, ' s): ', xsType(baseIdx + 1)        
         end do
-      end do
+        
+        select case(xsName)
+            case('fission')
+                self % nuSigmaF = xsType
+            case('total')
+                self % sigmaT = xsType
+            case('scatter')
+                self % sigmaS = xsType
+        end select
+                
+        if(allocated(origXS)) deallocate(origXS)
+        if(allocated(startXS)) deallocate(startXS)
+        if(allocated(xsType)) deallocate(xsType)
+
     end do
-!<-- MK 230718
+    
+    call variations % kill()
+!<-- MK 240228  
+    
+! !--> MK 230718
+!     do m = 1, self % nMat       !TODO This is only provisional
+!       matPtr  => self % mgData % getMaterial(m)
+!       mat     => baseMgNeutronMaterial_CptrCast(matPtr)
+!       do g = 1, self % nG
+!         do t = 2, self % nT
+!             self % nuSigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+!             real(mat % getNuFissionXS(g, self % rand)*1.001,defFlt) 
+!         end do
+!       end do
+!     end do
+! !<-- MK 230718
 
 ! !--> MK 230718 Moderator density change
 !     omega = 0.8
@@ -632,6 +846,58 @@ contains
 !         end do
 !       end do
 ! !<-- MK 230718
+
+! !--> MK 240404 Control rod insertion !TODO This is only provisional
+!     omega = 0.01
+!     m = 2       ! rod inside
+!     matPtr  => self % mgData % getMaterial(m)
+!     mat     => baseMgNeutronMaterial_CptrCast(matPtr)
+!     
+!     m2 = 1      ! CR
+!     matPtr2  => self % mgData % getMaterial(m2)
+!     mat2     => baseMgNeutronMaterial_CptrCast(matPtr2)
+!     
+!     do g = 1, self % nG
+!     
+!         do t = 2, self % nT
+!             timeXS = (t-1) * self % tstp
+!             if (timeXS <= 1) then
+!                 self % sigmaT(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+!                     real(mat % getTotalXS(g, self % rand),defFlt) + omega * &
+!                     (real(mat2 % getTotalXS(g, self % rand) - mat % getTotalXS(g, self % rand),defFlt)) * timeXS
+!                     
+!                 velInv = real(ONE / mat % getVel(g, self % rand),defFlt) + omega * &
+!                     (real((ONE / mat2 % getVel(g, self % rand)) - (ONE / mat % getVel(g, self % rand)),defFlt)) * timeXS    !TODO
+!                     
+!                 do g1 = 1, self % nG
+!                     self % sigmaS(self % nG * self % nG * self % nT * (m - 1) + (t - 1) * self % nG * self % nG + &
+!                         self % nG * (g - 1) + g1) = real(mat % getScatterXS(g1, g, self % rand), defFlt) &
+!                         + omega * (real(mat2 % getScatterXS(g1, g, self % rand) - mat % getScatterXS(g1, g, self % rand), defFlt)) &
+!                         * timeXS
+!                 end do
+!             end if
+!             
+!             if (timeXS > 1 .AND. timeXS <= 2) then
+!                 self % sigmaT(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+!                     real(mat % getTotalXS(g, self % rand),defFlt) + omega * &
+!                     (real(mat2 % getTotalXS(g, self % rand) - mat % getTotalXS(g, self % rand),defFlt)) * (2 - timeXS)
+!                     
+!                 velInv = real(ONE / mat % getVel(g, self % rand),defFlt) + omega * &        !TODO
+!                     (real((ONE / mat2 % getVel(g, self % rand)) - (ONE / mat % getVel(g, self % rand)),defFlt)) * (2 - timeXS)
+!                     
+!                 do g1 = 1, self % nG
+!                     self % sigmaS(self % nG * self % nG * self % nT * (m - 1) + (t - 1) * self % nG * self % nG + &
+!                         self % nG * (g - 1) + g1) = real(mat % getScatterXS(g1, g, self % rand), defFlt) &
+!                         + omega * (real(mat2 % getScatterXS(g1, g, self % rand) - mat % getScatterXS(g1, g, self % rand), defFlt)) &
+!                         * (2 - timeXS)
+!                 end do
+!             end if
+!             
+!             self % vel(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = 1.0_defFlt / velInv !TODO
+! 
+!         end do
+!     end do
+! !<-- MK 240404
 
 !--> DNP 230918
     ! Prepare delayed neutron data
@@ -702,10 +968,41 @@ contains
       self % lambda = 1.0_defFlt
     end if
     
-    allocate(self % DNPScores(self % nCells * self % nP))
-    allocate(self % prevDNP(self % nCells * self % nP))
-    allocate(self % DNP(self % nCells * self % nP))
+    allocate(self % dnpScoresTD(self % nCells * self % nP))
+    allocate(self % prevDnpTD(self % nCells * self % nP))
+    allocate(self % dnpTD(self % nCells * self % nP))
+    allocate(self % dnpScores(self % nCells * self % nP))
+    allocate(self % prevDnp(self % nCells * self % nP))
+    allocate(self % dnp(self % nCells * self % nP))
 !<-- DNP 230918
+!--> DNP 2nd 240311
+    allocate(self % omega0(self % nMat * self % nP))
+    allocate(self % omegaN(self % nMat * self % nP))
+    allocate(self % omega_1(self % nMat * self % nP))
+    allocate(self % omega_2(self % nMat * self % nP))
+
+    if (nP /= -1) then
+        do m = 1, self % nMat
+            idx0 = self % nP * (m - 1)
+            !$omp simd
+            do p = 1, self % nP 
+                kappa0 = exponential(self % lambda(idx0 + p) * self % tstp)     ! exponential(tau) = 1 - exp(-tau)
+                kappa1 = 1 - (kappa0/(self % lambda(idx0 + p) * self % tstp))
+                kappa2 = 1 - (2 * kappa1/(self % lambda(idx0 + p) * self % tstp))
+                
+                self % omega0(idx0 + p) = - (exponential(self % lambda(idx0 + p) * self % tstp) - 1)
+                self % omegaN(idx0 + p) = real((kappa1 + kappa2) / 2, defFlt)
+                self % omega_1(idx0 + p) = real(kappa0 - kappa2, defFlt)
+                self % omega_2(idx0 + p) = real((kappa2 - kappa1) / 2, defFlt)
+            end do 
+        end do
+    else
+        self % omega0 = 0.0_defFlt
+        self % omegaN = 0.0_defFlt
+        self % omega_1 = 0.0_defFlt
+        self % omega_2 = 0.0_defFlt
+    end if
+!<-- DNP 2nd 240311
 
   end subroutine init
 
@@ -751,20 +1048,37 @@ contains
     integer(longInt), save                        :: ints
     integer(longInt)                              :: intersections
     logical(defBool)                              :: convBool, entropyBool
-    integer(shortInt)                             :: cIdx, pIdx, tCnt, outCnt, actCycles
-    integer(shortInt), save                       :: idx0, g
-    !$omp threadprivate(pRNG, r, ints, idx0,g)
+    integer(shortInt)                             :: tCnt, outCnt, actCycles
+    !$omp threadprivate(pRNG, r, ints)
 
     ! Reset and start timer
     call timerReset(self % timerMain)
     call timerStart(self % timerMain)
     
-    self % keff       = 1.0_defFlt
-    scaleFac          = ZERO        
+    ! Initialise scores and fluxes
+    scaleFac          = ZERO   
+    self % keff       = 1.0_defFlt     
     self % keffScore  = ZERO        
-    self % DNPScores = ZERO        
-    self % prevDNP = 0.0_defFlt
-    self % fluxHist = ZERO     
+   
+    self % fluxScoresTD = ZERO
+    self % prevFluxTD = 1.0_defFlt  
+    self % fluxHistTD = ZERO   
+    self % fissionScoreTD = ZERO
+    self % dnpScoresTD = ZERO  
+    self % prevDnpTD = 0.0_defFlt
+    self % prevFissionTD_1 = 0.0_defFlt
+    self % prevFissionTD_2 = 0.0_defFlt
+    
+    self % fluxScores = ZERO
+    self % prevFlux = 1.0_defFlt  
+    self % fluxHist = ZERO    
+    self % fissionScore = ZERO
+    self % dnpScores = ZERO
+    self % prevDnp = 0.0_defFlt
+    self % prevFission_1 = 0.0_defFlt
+    self % prevFission_2 = 0.0_defFlt
+    
+    ! Initialise counters and volumes
     tCnt = 0
     outCnt = 0
     self % totalIt = 0
@@ -773,25 +1087,17 @@ contains
     
     ! Time-stepping
     do t = 1, self % nT
-    
-        tCnt = tCnt + 1
+        
+        tCnt = tCnt + 1     
 
-        ! Initialise fluxes 
-        self % scalarFlux = 0.0_defFlt
-        
-        if (t==1) then
-            self % prevFlux = 1.0_defFlt  
-        else
-            self % prevFlux = real(self % fluxScores(:,1), defFlt)
-        end if
-        
-        self % fluxScores = ZERO
-        self % source     = 0.0_defFlt
+        ! Initialise fluxes and sources
+        self % scalarFluxTD = 0.0_defFlt
+        self % scalarFlux   = 0.0_defFlt
+        self % sourceTD     = 0.0_defFlt
+        self % source       = 0.0_defFlt
 
         ! Initialise other results
         self % cellHit      = 0
-!         self % volume       = 0.0_defReal   ! To score volumes over cycles only
-!         self % volumeTracks = 0.0_defReal   !   
         
         ! Initialise cell information
         self % cellFound = .false.
@@ -808,7 +1114,8 @@ contains
         
         ! Power iteration
         do while( stoppingCriterion )
-            self % DNP = 0.0_defFlt
+            self % dnpTD = 0.0_defFlt
+            self % dnp = 0.0_defFlt
             
             if (isActive) then
                 itAct = itAct + 1
@@ -819,14 +1126,11 @@ contains
                     
             self % totalIt = self % totalIt + 1      ! For metrics, also volume accumlation MK 231011
                     
-            if (t == 1) then
-                ONE_KEFF = 1.0_defFlt / self % keff
-            else
-                ONE_KEFF = 1.0_defFlt / real(self % keffScore(1), defFlt)
-            end if
+            ONE_KEFF = 1.0_defFlt / self % keff
 
             !$omp parallel do schedule(static)
             do i = 1, self % nCells
+                call self % sourceUpdateKernel_TD(i, ONE_KEFF, t)
                 call self % sourceUpdateKernel(i, ONE_KEFF, t)
             end do
             !$omp end parallel do
@@ -836,43 +1140,27 @@ contains
             call timerStart(self % timerTransport)
             intersections = 0
             
-            if (t == 1) then
-                !$omp parallel do schedule(runtime) reduction(+: intersections) 
-                do i = 1, self % pop
+            !$omp parallel do schedule(runtime) reduction(+: intersections) 
+            do i = 1, self % pop
+            
+                ! Set seed
+                pRNG = self % rand
+                call pRNG % stride(i)
+                r % pRNG => pRNG 
+
+                ! Set ray attributes
+                call self % initialiseRay(r)
                 
-                    ! Set seed
-                    pRNG = self % rand
-                    call pRNG % stride(i)
-                    r % pRNG => pRNG 
+                ! Transport ray until termination criterion met
+                if (self % isotropic) then
+                    call self % transportSweep_isotropic(r,ints,t)
+                else
+                    call self % transportSweep(r,ints,t)
+                end if
+                intersections = intersections + ints
 
-                    ! Set ray attributes
-                    call self % initialiseRay(r)
-
-                    ! Transport ray until termination criterion met
-                    call self % transportSweep_steady(r,ints)
-                    intersections = intersections + ints
-
-                end do
-                !$omp end parallel do
-            else
-                !$omp parallel do schedule(runtime) reduction(+: intersections) 
-                do i = 1, self % pop
-                
-                    ! Set seed
-                    pRNG = self % rand
-                    call pRNG % stride(i)
-                    r % pRNG => pRNG 
-
-                    ! Set ray attributes
-                    call self % initialiseRay(r)
-
-                    ! Transport ray until termination criterion met
-                    call self % transportSweep_transient(r,ints,t)
-                    intersections = intersections + ints
-
-                end do
-                !$omp end parallel do      
-            end if
+            end do
+            !$omp end parallel do      
             
             call timerStop(self % timerTransport)
 
@@ -880,19 +1168,25 @@ contains
             call self % rand % stride(self % pop + 1)
             
             ! Normalise flux estimate and combines with source
-            call self % normaliseFluxAndVolume(it, t)
+            call self % normaliseFluxAndVolume_TD(t)
+            call self % normaliseFluxAndVolume()
             
             ! Calculate proportion of cells that were hit
             hitRate = real(sum(self % cellHit),defFlt) / self % nCells
             self % cellHit = 0
+            
+            ! Calculate keff
+            call self % calculateKeff(t)
 
             ! Scale initial flux to specified value
             if (t == 1) then
-                call self % calculateKeff()  
-                
-                scaleFac = (self % initVal / sum(self % scalarFlux))
-                self % scalarFlux = self % scalarFlux * real(scaleFac, defFlt)
-            end if
+                scaleFac = (self % initVal / sum(self % scalarFluxTD))
+                self % scalarFluxTD = self % scalarFluxTD * real(scaleFac, defFlt)
+            end if 
+
+            ! Scale unperturbed flux for keff recalcualtion. This is always done, also in first time step.
+            scaleFac = (self % initVal / sum(self % scalarFlux))
+            self % scalarFlux = self % scalarFlux * real(scaleFac, defFlt)         
 
             ! Accumulate flux scores
             if (isActive) call self % accumulateFluxAndKeffScores(t)
@@ -900,21 +1194,15 @@ contains
             ! Check convergence
             call self % calculateEntropy(entropyVec, entropyBool)
 
-            if (t == 1) then
-                stoppingCriterion = (itAct < self % active * 4)
-                actCycles = self % active * 4
-            else
-                stoppingCriterion = (itAct < self % active)
-                actCycles = self % active
-            end if
+            stoppingCriterion = (itAct < self % active)
+            actCycles = self % active
 
             if (convBool .AND. (it >= self % inactive) .AND. entropyBool) then   
-                    isActive = .true.
-                    convBool = .false.
+                isActive = .true.
+                convBool = .false.
             end if
 
-            ! Set previous iteration flux to scalar flux
-            ! and zero scalar flux
+            ! Set previous iteration flux to scalar flux and zero scalar flux
             call self % resetFluxes()
 
             ! Calculate times
@@ -935,37 +1223,15 @@ contains
             end if
             print *, 'Time step: ', numToChar(t), ' of ', numToChar(self % nT)
             if (.not. self % reduceLines) print *, 'Cell hit rate: ', trim(numToChar(real(hitRate,defReal)))
-            if (t ==1) then
-                if (.not. self % reduceLines) print *, 'keff: ', trim(numToChar(real(self % keff,defReal)))
-            else
-                if (.not. self % reduceLines) print *, 'keff: ', trim(numToChar(real(self % keffScore(1),defReal)))
-            end if
+            if (.not. self % reduceLines) print *, 'keff: ', trim(numToChar(real(self % keff,defReal)))
             print *, 'Elapsed time: ', trim(secToChar(elapsed_T))
             print *, 'Time per integration (ns): ', &
                     trim(numToChar(transport_T*10**9/(self % nG * intersections)))
         end do
         
         ! Finalise flux scores
-        call self % finaliseFluxAndKeffScores(itAct, t)  
+        call self % finaliseFluxAndKeffScores(itAct, t) 
         
-        ! Update previous scalar flux
-        !$omp parallel do schedule(static)
-        do cIdx = 1, self % nCells
-            idx0 = (cIdx - 1) * self % nG
-            do g = 1, self % nG
-                self % fluxHist(idx0 + g) = real(self % fluxScores(idx0 + g, 1),defFlt)
-            end do
-        end do
-        !$omp end parallel do
-        
-        ! Update previous precursors
-        !$omp parallel do schedule(static)
-        do pidx = 1, self % nP * self % nCells
-            self % prevDNP(pidx) = real(self % DNPScores(pidx),defFlt)
-            self % DNPScores(pidx) = ZERO
-        end do
-        !$omp end parallel do
-
         ! Print transient output
         if (tCnt == self % outInterval .OR. t == 1 .OR. t == self % nT) then
             outCnt = outCnt + 1
@@ -973,7 +1239,10 @@ contains
             if (self % mapFission) call self % printFissionRate(outCnt,t) 
             tCnt = 0
         end if
-    
+        
+        ! Update quantities for previous time steps needed for time derivatives
+        call self % updatePreviousQuantities(t)
+        
     end do
     
     ! Save number of time steps that are actually printed
@@ -1002,14 +1271,14 @@ contains
       halfwindow = INT(self % window * 0.5)
       
       ! Calculate Shannon entropy
-      sumFlux = sum(self % scalarFlux)
+      sumFlux = sum(self % scalarFluxTD)
       entropyVec(1:(self % window-1)) = entropyVec(2:self % window)
       newEntropy = 0.0_defFlt
       
       !$omp parallel do schedule(static) reduction(+: newEntropy) 
       do cIdx = 1, self % nCells
         idx = self % nG * (cIdx - 1)
-        P = sum(self % scalarFlux(idx + 1 : idx + self % nG)) / sumFlux
+        P = sum(self % scalarFluxTD(idx + 1 : idx + self % nG)) / sumFlux
         if (P <= ZERO) then
             newEntropy = newEntropy
         else
@@ -1091,140 +1360,7 @@ contains
     end if
 
   end subroutine initialiseRay
-
-!--> MK 240129
-  !!
-  !! Steady-state transport sweep
-  !! Moves ray through geometry, updating angular flux and
-  !! scoring scalar flux and volume.
-  !! Records the number of integrations/ray movements.
-  !!
-  subroutine transportSweep_steady(self, r, ints)
-    class(dynamicRRPhysicsPackage_TI), target, intent(inout) :: self
-    type(ray), intent(inout)                              :: r
-    integer(longInt), intent(out)                         :: ints
-    integer(shortInt)                                     :: matIdx, g, cIdx, event, matIdx0, baseIdx, baseIdx0
-    real(defReal)                                         :: totalLength, length
-    logical(defBool)                                      :: activeRay, hitVacuum
-    type(distCache)                                       :: cache
-    real(defFlt), dimension(self % nG)                    :: attenuate, delta, fluxVec
-    real(defFlt), pointer, dimension(:)                   :: totVec, velVec, scalarVec, sourceVec
-    real(defFlt)                                          :: lenFlt
-    real(defReal), dimension(3)                           :: r0, mu0
-
-    ! Set initial angular flux to angle average of cell source (space)
-    cIdx = r % coords % uniqueID
-
-    baseIdx = (cIdx - 1) * self % nG
-    sourceVec => self % source(baseIdx + 1 : baseIdx + self % nG)
-
-    !$omp simd
-    do g = 1, self % nG
-        fluxVec(g) = sourceVec(g)
-    end do
-
-    ints = 0
-    matIdx0 = 0
-    totalLength = ZERO
-    activeRay = .false.
-    
-    do while (totalLength < self % termination)
-    
-      ! Get material and cell the ray is moving through
-      matIdx  = r % coords % matIdx
-      cIdx    = r % coords % uniqueID
-      if (matIdx0 /= matIdx) then
-        matIdx0 = matIdx
-        
-        ! Cache total cross section
-        baseIdx0 = (matIdx - 1) * self % nG 
-        velVec => self % vel((baseIdx0 + 1) : (baseIdx0 + self % nG))
-        
-        baseIdx0 = (matIdx - 1) * self % nG * self % nT
-        totVec => self % sigmaT((baseIdx0 + 1) : (baseIdx0 + self % nG))
-      end if
-
-      ! Remember co-ordinates to set new cell's position
-      if (.not. self % cellFound(cIdx)) then
-        r0 = r % rGlobal()
-        mu0 = r % dirGlobal()
-      end if
-      
-      ! Set maximum flight distance and ensure ray is active
-      if (totalLength >= self % dead) then
-        length = self % termination - totalLength 
-        activeRay = .true.
-      else
-        length = self % dead - totalLength
-      end if
-
-      ! Move ray
-      ! Use distance caching or standard ray tracing
-      ! Distance caching seems a little bit more unstable
-      ! due to FP error accumulation, but is faster.
-      ! This can be fixed by resetting the cache after X number
-      ! of distance calculations.
-
-      if (self % cache) then
-        if (mod(ints,100_longInt) == 0)  cache % lvl = 0        !This can be decreased if problem with distance cashing persists
-        call self % geom % moveRay_withCache(r % coords, length, event, cache, hitVacuum)
-      else
-        call self % geom % moveRay_noCache(r % coords, length, event, hitVacuum)
-      end if
-      
-      totalLength = totalLength + length
-      lenFlt = real(length, defFlt)
-      
-      ! Set new cell's position. Use half distance across cell
-      ! to try and avoid FP error
-      if (.not. self % cellFound(cIdx)) then
-        !$omp critical 
-        self % cellFound(cIdx) = .true.
-        self % cellPos(cIdx,:) = r0 + HALF * length * mu0
-        !$omp end critical
-      end if
-      
-      baseIdx = (cIdx - 1) * self % nG
-      sourceVec => self % source(baseIdx + 1 : baseIdx + self % nG)
-      
-      ints = ints + 1
-
-      ! Calculate steady-state flux
-      !$omp simd
-      do g = 1, self % nG
-        attenuate(g) = exponential(totVec(g) * lenFlt)
-        delta(g) = (fluxVec(g) - sourceVec(g)) * attenuate(g)
-        fluxVec(g) = fluxVec(g) - delta(g)
-      end do
-
-      ! Accumulate to scalar flux
-      if (activeRay) then
-        scalarVec => self % scalarFlux(baseIdx + 1 : baseIdx + self % nG)
-        
-        call OMP_set_lock(self % locks(cIdx))
-        !$omp simd
-        do g = 1, self % nG
-            scalarVec(g) = scalarVec(g) + delta(g)
-        enddo
-
-        self % volumeTracks(cIdx) = self % volumeTracks(cIdx) + lenFlt
-        call OMP_unset_lock(self % locks(cIdx))
-
-        if (self % cellHit(cIdx) == 0) self % cellHit(cIdx) = 1
-      end if
-    
-      ! Check for a vacuum hit
-      if (hitVacuum) then
-        !$omp simd
-        do g = 1, size(fluxVec)
-            fluxVec(g) = 0.0_defFlt
-        end do 
-      end if
-    end do
-
-  end subroutine transportSweep_steady
-!<-- MK 240129
-
+  
 !--> MK 240129
   !!
   !! Transient transport sweep
@@ -1232,7 +1368,7 @@ contains
   !! scoring scalar flux and volume.
   !! Records the number of integrations/ray movements.
   !!
-  subroutine transportSweep_transient(self, r, ints, t)
+  subroutine transportSweep_isotropic(self, r, ints, t)
     class(dynamicRRPhysicsPackage_TI), target, intent(inout) :: self
     type(ray), intent(inout)                              :: r
     integer(shortInt), intent(in)                         :: t
@@ -1241,8 +1377,9 @@ contains
     real(defReal)                                         :: totalLength, length
     logical(defBool)                                      :: activeRay, hitVacuum
     type(distCache)                                       :: cache
-    real(defFlt), dimension(self % nG)                    :: attenuate, delta, flux_avg, flux_avgprv, denom, deltaTD, fluxVec
-    real(defFlt), pointer, dimension(:)                   :: totVec, velVec, scalarVec, sourceVec
+    real(defFlt), dimension(self % nG)                    :: attenuate, deltaTD, fluxVec, fluxVecSteady, deltaSteady
+    real(defFlt), pointer, dimension(:)                   :: totVec, scalarVec, sourceVec, scalarVecSteady, &
+        sourceVecSteady, totVecSteady
     real(defFlt)                                          :: lenFlt
     real(defReal), dimension(3)                           :: r0, mu0
 
@@ -1250,13 +1387,21 @@ contains
     cIdx = r % coords % uniqueID
 
     baseIdx = (cIdx - 1) * self % nG
-    sourceVec => self % source(baseIdx + 1 : baseIdx + self % nG)
+    sourceVec => self % sourceTD(baseIdx + 1 : baseIdx + self % nG)
 
     !$omp simd
     do g = 1, self % nG
         fluxVec(g) = sourceVec(g)
     end do
 
+! --> MK240319 Recalculate
+    sourceVecSteady => self % source(baseIdx + 1 : baseIdx + self % nG)
+    !$omp simd
+    do g = 1, self % nG
+        fluxVecSteady(g) = sourceVecSteady(g)
+    end do
+! <-- MK240319 Recalculate
+    
     ints = 0
     matIdx0 = 0
     totalLength = ZERO
@@ -1271,11 +1416,11 @@ contains
         matIdx0 = matIdx
         
         ! Cache total cross section
-        baseIdx0 = (matIdx - 1) * self % nG 
-        velVec => self % vel((baseIdx0 + 1) : (baseIdx0 + self % nG))
-        
         baseIdx0 = (matIdx - 1) * self % nG * self % nT + (t - 1) * self % nG
         totVec => self % sigmaT((baseIdx0 + 1) : (baseIdx0 + self % nG))
+        
+        baseIdx0 = (matIdx - 1) * self % nG * self % nT
+        totVecSteady => self % sigmaT((baseIdx0 + 1) : (baseIdx0 + self % nG))
       end if
 
       ! Remember co-ordinates to set new cell's position
@@ -1318,41 +1463,49 @@ contains
         !$omp end critical
       end if
       
-      baseIdx = (cIdx - 1) * self % nG
-      sourceVec => self % source(baseIdx + 1 : baseIdx + self % nG)
-      
       ints = ints + 1
+      
+      baseIdx = (cIdx - 1) * self % nG
+      sourceVec => self % sourceTD(baseIdx + 1 : baseIdx + self % nG)
 
-      ! Isotropic approximation
-      scalarVec => self % fluxHist(baseIdx + 1 : baseIdx + self % nG)
-        
+      ! Calculate time-dependent flux
       !$omp simd
       do g = 1, self % nG
-        flux_avgprv(g) = real(scalarVec(g) * ONE_FOUR_PI, defFlt)
+        attenuate(g) = exponential(totVec(g) * lenFlt)
+        deltaTD(g) = (fluxVec(g) - sourceVec(g)) * attenuate(g)
+        fluxVec(g) = fluxVec(g) - deltaTD(g)
       end do
-        
-      ! Calculate time-dependent flux
-      !$omp simd                                                    
+      
+! --> MK240319 Recalculate    
+      sourceVecSteady => self % source(baseIdx + 1 : baseIdx + self % nG) 
+
+      !$omp simd            !I guess this could also be made to be combined with loop above
       do g = 1, self % nG
-        attenuate(g) = exponential_TD(totVec(g) * lenFlt)
-        denom(g) = 1 / (totVec(g) * velVec(g) * self % tstp)
-        flux_avg(g) = (attenuate(g) * (fluxVec(g) - sourceVec(g) - flux_avgprv(g) * denom(g)) &
-            + sourceVec(g) + flux_avgprv(g) * denom(g)) / (1 + denom(g) * (1 - attenuate(g)))                         
-        delta(g) = (fluxVec(g) - sourceVec(g) + (flux_avg(g) - flux_avgprv(g)) * denom(g)) * attenuate(g) * totVec(g) * lenFlt     ! * totVec(g) * lenFlt to account for changed exponetial function
-        fluxVec(g) = fluxVec(g) - delta(g)
-        deltaTD(g) = delta(g) - lenFlt * (flux_avg(g) - flux_avgprv(g))/(velVec(g) * self % tstp)
-        flux_avgprv(g) = flux_avg(g) 
+        attenuate(g) = exponential(totVecSteady(g) * lenFlt)
+        deltaSteady(g) = (fluxVecSteady(g) - sourceVecSteady(g)) * attenuate(g)
+        fluxVecSteady(g) = fluxVecSteady(g) - deltaSteady(g)
       end do
+! <-- MK240319 Recalculate  
 
       ! Accumulate to scalar flux
       if (activeRay) then
-        scalarVec => self % scalarFlux(baseIdx + 1 : baseIdx + self % nG)
+        scalarVec => self % scalarFluxTD(baseIdx + 1 : baseIdx + self % nG)
         
         call OMP_set_lock(self % locks(cIdx))
         !$omp simd
         do g = 1, self % nG
             scalarVec(g) = scalarVec(g) + deltaTD(g)
         enddo
+        
+! --> MK240319 Recalculate 
+        scalarVecSteady => self % scalarFlux(baseIdx + 1 : baseIdx + self % nG)
+        
+        !call OMP_set_lock(self % locks(cIdx))
+        !$omp simd
+        do g = 1, self % nG
+            scalarVecSteady(g) = scalarVecSteady(g) + deltaSteady(g)
+        enddo
+! <-- MK240319 Recalculate 
 
         self % volumeTracks(cIdx) = self % volumeTracks(cIdx) + lenFlt
         call OMP_unset_lock(self % locks(cIdx))
@@ -1365,21 +1518,245 @@ contains
         !$omp simd
         do g = 1, size(fluxVec)
             fluxVec(g) = 0.0_defFlt
+        end do
+! --> MK240319 Recalculate 
+        !$omp simd
+        do g = 1, size(fluxVecSteady)
+            fluxVecSteady(g) = 0.0_defFlt
         end do 
+! <-- MK240319 Recalculate 
       end if
     end do
 
-  end subroutine transportSweep_transient
+  end subroutine transportSweep_isotropic
+!<-- MK 240129
+
+!--> MK 240129
+  !!
+  !! Transient transport sweep
+  !! Moves ray through geometry, updating angular flux and
+  !! scoring scalar flux and volume.
+  !! Records the number of integrations/ray movements.
+  !!
+  subroutine transportSweep(self, r, ints, t)
+    class(dynamicRRPhysicsPackage_TI), target, intent(inout) :: self
+    type(ray), intent(inout)                              :: r
+    integer(shortInt), intent(in)                         :: t
+    integer(longInt), intent(out)                         :: ints
+    integer(shortInt)                                     :: matIdx, g, cIdx, event, matIdx0, baseIdx, baseIdx0
+    real(defReal)                                         :: totalLength, length
+    logical(defBool)                                      :: activeRay, hitVacuum
+    type(distCache)                                       :: cache
+    real(defFlt), dimension(self % nG)                    :: attenuate, delta, flux_avg, flux_avgprv, denom, deltaTD, fluxVec, &
+        fluxVecSteady, deltaSteady
+    real(defFlt), pointer, dimension(:)                   :: totVec, velVec, scalarVec, sourceVec, scalarVecSteady, &
+        sourceVecSteady, totVecSteady, velVecSteady
+    real(defFlt)                                          :: lenFlt
+    real(defReal), dimension(3)                           :: r0, mu0
+
+    ! Set initial angular flux to angle average of cell source (space)
+    cIdx = r % coords % uniqueID
+
+    baseIdx = (cIdx - 1) * self % nG
+    sourceVec => self % sourceTD(baseIdx + 1 : baseIdx + self % nG)
+
+    !$omp simd
+    do g = 1, self % nG
+        fluxVec(g) = sourceVec(g)
+    end do
+
+! --> MK240319 Recalculate
+    sourceVecSteady => self % source(baseIdx + 1 : baseIdx + self % nG)
+    !$omp simd
+    do g = 1, self % nG
+        fluxVecSteady(g) = sourceVecSteady(g)
+    end do
+! <-- MK240319 Recalculate
+    
+    ints = 0
+    matIdx0 = 0
+    totalLength = ZERO
+    activeRay = .false.
+    
+    do while (totalLength < self % termination)
+    
+      ! Get material and cell the ray is moving through
+      matIdx  = r % coords % matIdx
+      cIdx    = r % coords % uniqueID
+      if (matIdx0 /= matIdx) then
+        matIdx0 = matIdx
+        
+        ! Cache total cross section and neutron velocity
+!         baseIdx0 = (matIdx - 1) * self % nG       !TODO
+!         velVec => self % vel((baseIdx0 + 1) : (baseIdx0 + self % nG))
+        
+        baseIdx0 = (matIdx - 1) * self % nG * self % nT + (t - 1) * self % nG
+        totVec => self % sigmaT((baseIdx0 + 1) : (baseIdx0 + self % nG))
+        velVec => self % vel((baseIdx0 + 1) : (baseIdx0 + self % nG))
+        
+        baseIdx0 = (matIdx - 1) * self % nG * self % nT
+        totVecSteady => self % sigmaT((baseIdx0 + 1) : (baseIdx0 + self % nG))
+        velVecSteady => self % vel((baseIdx0 + 1) : (baseIdx0 + self % nG))
+      end if
+
+      ! Remember co-ordinates to set new cell's position
+      if (.not. self % cellFound(cIdx)) then
+        r0 = r % rGlobal()
+        mu0 = r % dirGlobal()
+      end if
+      
+      ! Set maximum flight distance and ensure ray is active
+      if (totalLength >= self % dead) then
+        length = self % termination - totalLength 
+        activeRay = .true.
+      else
+        length = self % dead - totalLength
+      end if
+
+      ! Move ray
+      ! Use distance caching or standard ray tracing
+      ! Distance caching seems a little bit more unstable
+      ! due to FP error accumulation, but is faster.
+      ! This can be fixed by resetting the cache after X number
+      ! of distance calculations.
+
+      if (self % cache) then
+        if (mod(ints,100_longInt) == 0)  cache % lvl = 0
+        call self % geom % moveRay_withCache(r % coords, length, event, cache, hitVacuum)
+      else
+        call self % geom % moveRay_noCache(r % coords, length, event, hitVacuum)
+      end if
+      
+      totalLength = totalLength + length
+      lenFlt = real(length, defFlt)
+      
+      ! Set new cell's position. Use half distance across cell
+      ! to try and avoid FP error
+      if (.not. self % cellFound(cIdx)) then
+        !$omp critical 
+        self % cellFound(cIdx) = .true.
+        self % cellPos(cIdx,:) = r0 + HALF * length * mu0
+        !$omp end critical
+      end if
+      
+      ints = ints + 1
+      
+      baseIdx = (cIdx - 1) * self % nG
+      sourceVec => self % sourceTD(baseIdx + 1 : baseIdx + self % nG)
+      scalarVec => self % fluxHistTD(baseIdx + 1 : baseIdx + self % nG)
+
+      ! Isotropic approximation
+      !$omp simd
+      do g = 1, self % nG
+        flux_avgprv(g) = real(scalarVec(g) * ONE_FOUR_PI, defFlt)
+      end do
+      
+      if (t==1) then
+        ! Calculate steady-state flux
+        !$omp simd
+        do g = 1, self % nG
+            attenuate(g) = exponential(totVec(g) * lenFlt)
+            deltaTD(g) = (fluxVec(g) - sourceVec(g)) * attenuate(g)
+            fluxVec(g) = fluxVec(g) - deltaTD(g)
+        end do
+      else
+        ! Calculate time-dependent flux
+        !$omp simd                                                    
+        do g = 1, self % nG
+            attenuate(g) = exponential_TD(totVec(g) * lenFlt)
+            denom(g) = 1 / (totVec(g) * velVec(g) * self % tstp)
+            flux_avg(g) = (attenuate(g) * (fluxVec(g) - sourceVec(g) - flux_avgprv(g) * denom(g)) &
+                + sourceVec(g) + flux_avgprv(g) * denom(g)) / (1 + denom(g) * (1 - attenuate(g)))                         
+            delta(g) = (fluxVec(g) - sourceVec(g) + (flux_avg(g) - flux_avgprv(g)) * denom(g)) * attenuate(g) * totVec(g) * lenFlt     ! * totVec(g) * lenFlt to account for changed exponetial function
+            fluxVec(g) = fluxVec(g) - delta(g)
+            deltaTD(g) = delta(g) - lenFlt * (flux_avg(g) - flux_avgprv(g))/(velVec(g) * self % tstp)
+        end do
+      end if
+      
+! --> MK240319 Recalculate    
+      sourceVecSteady => self % source(baseIdx + 1 : baseIdx + self % nG) 
+      scalarVecSteady => self % fluxHist(baseIdx + 1 : baseIdx + self % nG)
+     
+      ! Isotropic approximation
+      !$omp simd
+      do g = 1, self % nG
+        flux_avgprv(g) = real(scalarVecSteady(g) * ONE_FOUR_PI, defFlt)
+      end do
+      
+      if (t==1) then
+        ! Calculate steady-state flux
+        !$omp simd
+        do g = 1, self % nG
+            attenuate(g) = exponential(totVecSteady(g) * lenFlt)
+            deltaSteady(g) = (fluxVecSteady(g) - sourceVecSteady(g)) * attenuate(g)
+            fluxVecSteady(g) = fluxVecSteady(g) - deltaSteady(g)
+        end do
+      else
+        !Calculate time-dependent flux
+        !$omp simd                                                    
+        do g = 1, self % nG
+            attenuate(g) = exponential_TD(totVecSteady(g) * lenFlt)
+            denom(g) = 1 / (totVecSteady(g) * velVecSteady(g) * self % tstp)
+            flux_avg(g) = (attenuate(g) * (fluxVecSteady(g) - sourceVecSteady(g) - flux_avgprv(g) * denom(g)) &
+                + sourceVecSteady(g) + flux_avgprv(g) * denom(g)) / (1 + denom(g) * (1 - attenuate(g)))                         
+            delta(g) = (fluxVecSteady(g) - sourceVecSteady(g) + (flux_avg(g) - flux_avgprv(g)) * denom(g)) * attenuate(g) &
+                * totVecSteady(g) * lenFlt
+            fluxVecSteady(g) = fluxVecSteady(g) - delta(g)
+            deltaSteady(g) = delta(g) - lenFlt * (flux_avg(g) - flux_avgprv(g))/(velVecSteady(g) * self % tstp)
+        end do
+      end if
+! <-- MK240319 Recalculate  
+
+      ! Accumulate to scalar flux
+      if (activeRay) then
+        scalarVec => self % scalarFluxTD(baseIdx + 1 : baseIdx + self % nG)
+        
+        call OMP_set_lock(self % locks(cIdx))
+        !$omp simd
+        do g = 1, self % nG
+            scalarVec(g) = scalarVec(g) + deltaTD(g)
+        enddo
+        
+! --> MK240319 Recalculate 
+        scalarVecSteady => self % scalarFlux(baseIdx + 1 : baseIdx + self % nG)
+        
+        !$omp simd
+        do g = 1, self % nG
+            scalarVecSteady(g) = scalarVecSteady(g) + deltaSteady(g)
+        enddo
+! <-- MK240319 Recalculate 
+
+        self % volumeTracks(cIdx) = self % volumeTracks(cIdx) + lenFlt
+        call OMP_unset_lock(self % locks(cIdx))
+
+        if (self % cellHit(cIdx) == 0) self % cellHit(cIdx) = 1
+      end if
+    
+      ! Check for a vacuum hit
+      if (hitVacuum) then
+        !$omp simd
+        do g = 1, size(fluxVec)
+            fluxVec(g) = 0.0_defFlt
+        end do
+! --> MK240319 Recalculate 
+        !$omp simd
+        do g = 1, size(fluxVecSteady)
+            fluxVecSteady(g) = 0.0_defFlt
+        end do 
+! <-- MK240319 Recalculate 
+      end if
+    end do
+
+  end subroutine transportSweep
 !<-- MK 240129
 
 !--> MK 230718
   !!
-  !! Normalise flux and volume by total track length and increments
+  !! Normalise transient flux and volume by total track length and increments
   !! the flux by the neutron source
   !!
-  subroutine normaliseFluxAndVolume(self, it, t)
+  subroutine normaliseFluxAndVolume_TD(self, t)
     class(dynamicRRPhysicsPackage_TI), intent(inout) :: self
-    integer(shortInt), intent(in)                 :: it
     integer(shortInt), intent(in)                 :: t
     real(defFlt)                                  :: norm
     real(defReal)                                 :: normVol
@@ -1390,14 +1767,13 @@ contains
 
     norm = real(ONE / self % lengthPerIt, defFlt)   
     normVol = ONE / (self % lengthPerIt * self % totalIt)        ! To score volumes over time steps
-!    normVol = ONE / (self % lengthPerIt * it)                  ! To score volumes over cycles only
 
     !$omp parallel do schedule(static)
     do cIdx = 1, self % nCells
       matIdx =  self % geom % geom % graph % getMatFromUID(cIdx)
       
       ! Update volume due to additional rays
-      self % volume(cIdx) = self % volumeTracks(cIdx) * normVol 
+      self % volume(cIdx) = self % volumeTracks(cIdx) * normVol
       vol = real(self % volume(cIdx),defFlt)
 
       do g = 1, self % nG
@@ -1405,35 +1781,242 @@ contains
         idx = self % nG * (cIdx - 1) + g
 
         if (vol > volume_tolerance) then
-          self % scalarFlux(idx) = real(self % scalarFlux(idx) * FOUR_PI, defFlt) * norm  / (total * vol)
+          self % scalarFluxTD(idx) = real(self % scalarFluxTD(idx) * FOUR_PI, defFlt) * norm  / (total * vol)
         end if
         
-        self % scalarFlux(idx) = self % scalarFlux(idx) + real(self % source(idx) * FOUR_PI, defFlt)
+        self % scalarFluxTD(idx) = self % scalarFluxTD(idx) + real(self % sourceTD(idx) * FOUR_PI, defFlt)
         
-        if (self % scalarFlux(idx) < 0) self % scalarFlux(idx) = 0.0_defFlt
+        if (self % scalarFluxTD(idx) < 0) self % scalarFluxTD(idx) = 0.0_defFlt
+      end do
+
+    end do
+    !$omp end parallel do
+
+  end subroutine normaliseFluxAndVolume_TD
+!<-- MK 230718
+
+  !!
+  !! Normalise unperturbed flux and volume by total track length and increments
+  !! the flux by the neutron source
+  !!
+  subroutine normaliseFluxAndVolume(self)
+    class(dynamicRRPhysicsPackage_TI), intent(inout) :: self
+    real(defFlt)                                  :: norm
+    real(defFlt), save                            :: total, vol
+    integer(shortInt), save                       :: g, matIdx, idx
+    integer(shortInt)                             :: cIdx
+    !$omp threadprivate(total, vol, idx, g, matIdx)
+
+    norm = real(ONE / self % lengthPerIt, defFlt)
+
+    !$omp parallel do schedule(static)
+    do cIdx = 1, self % nCells
+      matIdx =  self % geom % geom % graph % getMatFromUID(cIdx) 
+      
+      ! Read volume
+      vol = real(self % volume(cIdx),defFlt)
+      
+      do g = 1, self % nG
+
+        total = self % sigmaT((matIdx - 1) * self % nG * self % nT + g)
+        idx   = self % nG * (cIdx - 1) + g
+
+        if (vol > volume_tolerance) then
+           self % scalarFlux(idx) = real(self % scalarFlux(idx) * FOUR_PI, defFlt) * norm / ( total * vol)
+        end if
+
+        self % scalarFlux(idx) =  self % scalarflux(idx) + real(self % source(idx) * FOUR_PI, defFlt)
+        if (self % scalarFlux(idx) < 0) self % scalarFlux(idx) = 0.0_defFlt     ! Fudged
+
       end do
 
     end do
     !$omp end parallel do
 
   end subroutine normaliseFluxAndVolume
-!<-- MK 230718
 
 !--> MK 230822   
   !!
-  !! Kernel to update sources given a cell index
+  !! Kernel to update transient sources given a cell index
+  !!
+  subroutine sourceUpdateKernel_TD(self, cIdx, ONE_KEFF, t)
+    class(dynamicRRPhysicsPackage_TI), target, intent(inout) :: self
+    integer(shortInt), intent(in)                         :: cIdx
+    real(defFlt), intent(in)                              :: ONE_KEFF
+    integer(shortInt), intent(in)                         :: t
+    real(defFlt)                                          :: scatter, fission, ONE_MIN_B
+    real(defFlt), dimension(:), pointer                   :: nuFission, total, scatterXS, velocity
+    real(defFlt), dimension(:), pointer                   :: beta, lambda, chiP, chiD, chiDVec, dnpPrevVec, dnpVec
+!--> DNP 2nd 240311
+    real(defFlt), dimension(:), pointer                   :: omega0, omegaN, omega_1, omega_2
+    real(defFlt)                                          :: omegaAcc, dnpAcc, dnpAcc_1, dnpAcc_2, sourceDnp, sourceDnpPrev, &
+        fissionVec_1, fissionVec_2
+!<-- DNP 2nd 240311
+    integer(shortInt)                                     :: matIdx, g, gIn, baseIdx, idx, matIdx1, matIdx2, dnpIdx, p
+    integer(shortInt)                                     :: baseIdx0, baseIdx1
+    real(defFlt), pointer, dimension(:)                   :: fluxVec, scatterVec
+    real(defFlt), dimension(self % nG)                    :: fluxTimeDeriv
+
+    ! Identify material
+    matIdx  =  self % geom % geom % graph % getMatFromUID(cIdx) 
+    
+    ! Guard against void cells
+    if (matIdx >= VOID_MAT) then
+      baseIdx = self % ng * (cIdx - 1)
+      do g = 1, self % nG
+        idx = baseIdx + g
+        self % sourceTD(idx) = 0.0_defFlt
+      end do
+      return
+    end if
+    
+    ! Define indeces
+    matIdx1 = (matIdx - 1) * self % nG 
+    baseIdx0 = matIdx1 * self % nP
+    baseIdx1 = (matIdx - 1) * self % nP
+    matIdx2 = (matIdx - 1) * self % nG * self % nT + (t - 1) * self % nG
+    
+    ! Obtain data for DNPs
+    beta => self % beta((baseIdx1 + 1) : (baseIdx1 + self % nP))
+    ONE_MIN_B = 1.0_defFlt - sum(beta)
+    lambda => self % lambda((baseIdx1 + 1) : (baseIdx1 + self % nP))
+
+    omega0 => self % omega0((baseIdx1 + 1) : (baseIdx1 + self % nP))
+    omega_1 => self % omega_1((baseIdx1 + 1) : (baseIdx1 + self % nP))
+    omega_2 => self % omega_2((baseIdx1 + 1) : (baseIdx1 + self % nP))
+    omegaN => self % omegaN((baseIdx1 + 1) : (baseIdx1 + self % nP))
+
+    dnpIdx = self % nP * (cIdx - 1)
+    dnpPrevVec => self % prevDnpTD((dnpIdx+1) : (dnpIdx+self % nP))
+    dnpVec => self % dnpTD((dnpIdx+1) : (dnpIdx+self % nP))
+    
+    ! Obtain XSs and other data
+    chiP => self % chiP((matIdx1 + 1) : (matIdx1 + self % nG))
+    chiD => self % chiD((baseIdx0 + 1) : (baseIdx0 + self % nG * self % nP))
+!     velocity => self % vel((matIdx1 + 1) : (matIdx1 + self % nG))     !TODO
+        
+    velocity => self % vel((matIdx2 + 1) : (matIdx2 + self % nG))
+    total => self % sigmaT((matIdx2 + 1) : (matIdx2 + self % nG))                        
+    scatterXS => self % sigmaS((matIdx2 * self % nG + 1) : (matIdx2 * self % nG + self % nG*self % nG))
+    nuFission => self % nuSigmaF((matIdx2 + 1) : (matIdx2 + self % nG)) 
+    
+    baseIdx = self % ng * (cIdx - 1)
+    fluxVec => self % prevFluxTD((baseIdx+1) : (baseIdx+self % nG))
+    
+    ! Calculate fission source
+    fission = 0.0_defFlt
+    !$omp simd reduction(+:fission)                                 
+    do gIn = 1, self % nG                                         
+        fission = fission + fluxVec(gIn) * nuFission(gIn) 
+    end do
+    
+    ! Calculate DNPs
+    if (t==1) then
+        !$omp simd
+        do p = 1, self % nP 
+            dnpVec(p) = (beta(p) / lambda(p)) * ONE_KEFF * fission
+        end do
+        
+        fissionVec_1 = ONE_KEFF * fission
+        fissionVec_2 = ONE_KEFF * fission
+        dnpPrevVec => self % dnpTD((dnpIdx+1) : (dnpIdx+self % nP))
+    else
+        fissionVec_1 = self % prevFissionTD_1(cIdx)
+        fissionVec_2 = self % prevFissionTD_2(cIdx)
+        
+        !$omp simd
+        do p = 1, self % nP 
+            dnpVec(p) = omega0(p) * dnpPrevVec(p) + (beta(p) / lambda(p)) * (ONE_KEFF * fission * omegaN(p) + &
+                fissionVec_1 * omega_1(p) + fissionVec_2 * omega_2(p))
+        end do
+    end if       
+
+    ! Calculate time derivative source term
+    if (self % isotropic) then
+        if (t==1) then       
+            !$omp simd
+            do gIn = 1, self % nG                                         
+                fluxTimeDeriv(gIn) = 0.0_defFlt 
+            end do
+        else
+            !$omp simd
+            do gIn = 1, self % nG                                         
+                fluxTimeDeriv(gIn) = (fluxVec(gIn) - real(self % fluxHistTD(baseIdx + gIn), defFlt)) / (velocity(gIn) * self % tstp) 
+            end do
+        end if
+    else
+        !$omp simd
+        do gIn = 1, self % nG                                         
+            fluxTimeDeriv(gIn) = 0.0_defFlt 
+        end do
+    end if
+
+    do g = 1, self % nG
+
+        ! Calculate DNP source
+        omegaAcc = 0.0_defFlt
+        dnpAcc = 0.0_defFlt
+        dnpAcc_1 = 0.0_defFlt
+        dnpAcc_2 = 0.0_defFlt
+        baseIdx0 = self % nP * (g - 1)
+        chiDVec => chiD((baseIdx0 + 1):(baseIdx0 + self % nP))
+        
+        !$omp simd reduction(+:omegaAcc,dnpAcc,dnpAcc_1,dnpAcc_2)  
+        do p = 1, self % nP 
+            omegaAcc = omegaAcc + chiDVec(p) * beta(p) * real(omegaN(p), defFlt)
+            dnpAcc = dnpAcc + chiDVec(p) * lambda(p) * real(omega0(p), defFlt) * dnpPrevVec(p)
+            dnpAcc_1 = dnpAcc_1 + chiDVec(p) * beta(p) * real(omega_1(p), defFlt)
+            dnpAcc_2 = dnpAcc_2 + chiDVec(p) * beta(p) * real(omega_2(p), defFlt)
+        end do
+        
+        sourceDnpPrev = dnpAcc + fissionVec_1 * dnpAcc_1 + fissionVec_2 * dnpAcc_2  
+        sourceDnp = omegaAcc * fission * ONE_KEFF + sourceDnpPrev
+
+        ! Calculate scattering source
+        baseIdx0 = self % nG * (g - 1)
+        scatterVec => scatterXS((baseIdx0 + 1) : (baseIdx0 + self % nG))    
+
+        scatter = 0.0_defFlt
+        
+        ! Sum contributions from all energies
+        !$omp simd reduction(+:scatter)
+        do gIn = 1, self % nG
+            scatter = scatter + fluxVec(gIn) * scatterVec(gIn)  
+        end do
+
+        ! Output index
+        idx = baseIdx + g
+
+        ! Add all contributions
+        self % sourceTD(idx) = ONE_MIN_B * chiP(g) * fission * ONE_KEFF + scatter + sourceDnp - fluxTimeDeriv(g)
+        self % sourceTD(idx) = self % sourceTD(idx) / (real(total(g) * FOUR_PI, defFlt))
+    end do
+    
+    ! Save fission source for following time steps
+    self % fissionSourceTD(cIdx) = ONE_KEFF * fission
+
+  end subroutine sourceUpdateKernel_TD
+!<-- MK 230822   
+
+!--> MK 230822   
+  !!
+  !! Kernel to update unperturbed sources given a cell index
   !!
   subroutine sourceUpdateKernel(self, cIdx, ONE_KEFF, t)
     class(dynamicRRPhysicsPackage_TI), target, intent(inout) :: self
     integer(shortInt), intent(in)                         :: cIdx
     real(defFlt), intent(in)                              :: ONE_KEFF
     integer(shortInt), intent(in)                         :: t
-    real(defFlt)                                          :: scatter, fission, dnpSum, ONE_MIN_B
-    real(defFlt), dimension(:), pointer                   :: nuFission, total, scatterXS
+    real(defFlt)                                          :: scatter, fission, ONE_MIN_B
+    real(defFlt), dimension(:), pointer                   :: nuFission, total, scatterXS, velocity
     real(defFlt), dimension(:), pointer                   :: beta, lambda, chiP, chiD, chiDVec, dnpPrevVec, dnpVec
+    real(defFlt), dimension(:), pointer                   :: omega0, omegaN, omega_1, omega_2
+    real(defFlt)                                          :: omegaAcc, dnpAcc, dnpAcc_1, dnpAcc_2, sourceDnp, sourceDnpPrev, &
+        fissionVec_1, fissionVec_2
     integer(shortInt)                                     :: matIdx, g, gIn, baseIdx, idx, matIdx1, matIdx2, dnpIdx, p
     integer(shortInt)                                     :: baseIdx0, baseIdx1
     real(defFlt), pointer, dimension(:)                   :: fluxVec, scatterVec
+    real(defFlt), dimension(self % nG)                    :: fluxTimeDeriv
 
     ! Identify material
     matIdx  =  self % geom % geom % graph % getMatFromUID(cIdx) 
@@ -1448,30 +2031,38 @@ contains
       return
     end if
     
+    ! Define indeces
     matIdx1 = (matIdx - 1) * self % nG 
     baseIdx0 = matIdx1 * self % nP
     baseIdx1 = (matIdx - 1) * self % nP
+    matIdx2 = (matIdx - 1) * self % nG * self % nT
     
-    !chi => self % chi(matIdx1 + (1):(self % nG))                 
-    chiP => self % chiP((matIdx1 + 1) : (matIdx1 + self % nG))
-    chiD => self % chiD((baseIdx0 + 1) : (baseIdx0 + self % nG * self % nP))
-    
+    ! Obtain data for DNPs
     beta => self % beta((baseIdx1 + 1) : (baseIdx1 + self % nP))
     ONE_MIN_B = 1.0_defFlt - sum(beta)
     lambda => self % lambda((baseIdx1 + 1) : (baseIdx1 + self % nP))
 
-    ! Obtain XSs
-    matIdx2 = (matIdx - 1) * self % nG * self % nT + (t - 1) * self % nG
-        
+    omega0 => self % omega0((baseIdx1 + 1) : (baseIdx1 + self % nP))
+    omega_1 => self % omega_1((baseIdx1 + 1) : (baseIdx1 + self % nP))
+    omega_2 => self % omega_2((baseIdx1 + 1) : (baseIdx1 + self % nP))
+    omegaN => self % omegaN((baseIdx1 + 1) : (baseIdx1 + self % nP))
+    
+    dnpIdx = self % nP * (cIdx - 1)
+    dnpPrevVec => self % prevDnp((dnpIdx+1) : (dnpIdx+self % nP))
+    dnpVec => self % dnp((dnpIdx+1) : (dnpIdx+self % nP))
+
+    ! Obtain XSs and other data
+    chiP => self % chiP((matIdx1 + 1) : (matIdx1 + self % nG))
+    chiD => self % chiD((baseIdx0 + 1) : (baseIdx0 + self % nG * self % nP))
+!     velocity => self % vel((matIdx1 + 1) : (matIdx1 + self % nG)) !TODO
+ 
+    velocity => self % vel((matIdx2 + 1) : (matIdx2 + self % nG))
     total => self % sigmaT((matIdx2 + 1) : (matIdx2 + self % nG))                        
     scatterXS => self % sigmaS((matIdx2 * self % nG + 1) : (matIdx2 * self % nG + self % nG*self % nG))
     nuFission => self % nuSigmaF((matIdx2 + 1) : (matIdx2 + self % nG)) 
+    
     baseIdx = self % ng * (cIdx - 1)
     fluxVec => self % prevFlux((baseIdx+1) : (baseIdx+self % nG))
-    
-    dnpIdx = self % nP * (cIdx - 1)
-    dnpPrevVec => self % prevDNP((dnpIdx+1) : (dnpIdx+self % nP))
-    dnpVec => self % DNP((dnpIdx+1) : (dnpIdx+self % nP))
     
     ! Calculate fission source
     fission = 0.0_defFlt
@@ -1480,33 +2071,67 @@ contains
         fission = fission + fluxVec(gIn) * nuFission(gIn) 
     end do
     
-!--> DNP 230918
     ! Calculate DNPs
-    if (t==1) then
+    if (t==1) then      
         !$omp simd
         do p = 1, self % nP 
             dnpVec(p) = (beta(p) / lambda(p)) * ONE_KEFF * fission
         end do
+        
+        fissionVec_1 = ONE_KEFF * fission
+        fissionVec_2 = ONE_KEFF * fission
+        dnpPrevVec => self % dnp((dnpIdx+1) : (dnpIdx+self % nP))
     else
+        fissionVec_1 = self % prevFission_1(cIdx)
+        fissionVec_2 = self % prevFission_2(cIdx)
+        
         !$omp simd
         do p = 1, self % nP 
-            dnpVec(p) = (beta(p) * ONE_KEFF * fission * self % tstp + dnpPrevVec(p))/(1 + lambda(p) * self % tstp)
+            dnpVec(p) = omega0(p) * dnpPrevVec(p) + (beta(p) / lambda(p)) * (ONE_KEFF * fission * omegaN(p) + &
+                fissionVec_1 * omega_1(p) + fissionVec_2 * omega_2(p))
+        end do
+    end if   
+
+    ! Calculate time derivative source term
+    if (self % isotropic) then
+        if (t==1) then       
+            !$omp simd
+            do gIn = 1, self % nG                                         
+                fluxTimeDeriv(gIn) = 0.0_defFlt 
+            end do
+        else
+            !$omp simd
+            do gIn = 1, self % nG                                         
+                fluxTimeDeriv(gIn) = (fluxVec(gIn) - real(self % fluxHist(baseIdx + gIn), defFlt)) / (velocity(gIn) * self % tstp) 
+            end do
+        end if
+    else
+        !$omp simd
+        do gIn = 1, self % nG                                         
+            fluxTimeDeriv(gIn) = 0.0_defFlt 
         end do
     end if
-!<-- DNP 230918
 
     do g = 1, self % nG
-!--> DNP 230918
         ! Calculate DNP source
-        dnpSum = 0.0_defFlt
+        omegaAcc = 0.0_defFlt
+        dnpAcc = 0.0_defFlt
+        dnpAcc_1 = 0.0_defFlt
+        dnpAcc_2 = 0.0_defFlt
         baseIdx0 = self % nP * (g - 1)
-        chiDVec => chiD((baseIdx0 + 1) : (baseIdx0 + self % nP))
-            
-        !$omp simd reduction(+:dnpSum) 
+        chiDVec => chiD((baseIdx0 + 1):(baseIdx0 + self % nP))
+        
+        !$omp simd reduction(+:omegaAcc,dnpAcc,dnpAcc_1,dnpAcc_2)  
         do p = 1, self % nP 
-            dnpSum = dnpSum + chiDVec(p) * lambda(p) * dnpVec(p)
+            omegaAcc = omegaAcc + chiDVec(p) * beta(p) * real(omegaN(p), defFlt)
+            dnpAcc = dnpAcc + chiDVec(p) * lambda(p) * real(omega0(p), defFlt) * dnpPrevVec(p)
+            dnpAcc_1 = dnpAcc_1 + chiDVec(p) * beta(p) * real(omega_1(p), defFlt)
+            dnpAcc_2 = dnpAcc_2 + chiDVec(p) * beta(p) * real(omega_2(p), defFlt)
         end do
-!<-- DNP 230918
+        
+        sourceDnpPrev = dnpAcc + fissionVec_1 * dnpAcc_1 + fissionVec_2 * dnpAcc_2  
+        sourceDnp = omegaAcc * fission * ONE_KEFF + sourceDnpPrev
+
         baseIdx0 = self % nG * (g - 1)
         scatterVec => scatterXS((baseIdx0 + 1) : (baseIdx0 + self % nG))    
 
@@ -1522,9 +2147,13 @@ contains
         ! Output index
         idx = baseIdx + g
 
-        self % source(idx) = ONE_MIN_B * chiP(g) * fission * ONE_KEFF + scatter + dnpSum
+        ! Add all contributions
+        self % source(idx) = ONE_MIN_B * chiP(g) * fission * ONE_KEFF + scatter + sourceDnp - fluxTimeDeriv(g)
         self % source(idx) = self % source(idx) / (real(total(g) * FOUR_PI, defFlt))
     end do
+    
+    ! Save fission source for following time steps
+    self % fissionSource(cIdx) = ONE_KEFF * fission
 
   end subroutine sourceUpdateKernel
 !<-- MK 230822   
@@ -1532,8 +2161,9 @@ contains
   !!
   !! Calculate keff
   !!
-  subroutine calculateKeff(self)
+  subroutine calculateKeff(self, t)
     class(dynamicRRPhysicsPackage_TI), intent(inout) :: self
+    integer(shortInt), intent(in)                 :: t
     real(defFlt)                                  :: fissionRate, prevFissionRate
     real(defFlt), save                            :: fissLocal, prevFissLocal, vol
     integer(shortInt), save                       :: matIdx, g, idx, mIdx
@@ -1581,20 +2211,87 @@ contains
   end subroutine calculateKeff
   
   !!
-  !! Sets prevFlux to scalarFlux and zeros scalarFlux
+  !! Sets prevFlux to scalarFluxTD and zeros scalarFluxTD
   !!
   subroutine resetFluxes(self)
     class(dynamicRRPhysicsPackage_TI), intent(inout) :: self
-    integer(shortInt)                             :: idx
+    integer(shortInt)                                :: idx
 
     !$omp parallel do schedule(static)
-    do idx = 1, size(self % scalarFlux)
-      self % prevFlux(idx) = self % scalarFlux(idx)
-      self % scalarFlux(idx) = 0.0_defFlt
+    do idx = 1, size(self % scalarFluxTD)
+        ! Reset transient fluxes
+        self % prevFluxTD(idx) = self % scalarFluxTD(idx)
+        self % scalarFluxTD(idx) = 0.0_defFlt
+        
+        ! Reset steady-state fluxes
+        self % prevFlux(idx) = self % scalarFlux(idx)
+        self % scalarFlux(idx) = 0.0_defFlt
+    end do
+    !$omp end parallel do    
+
+  end subroutine resetFluxes
+  
+!--> MK 240402  
+  !!
+  !! Updates quantities of previous timesteps that are needed for time derivatives
+  !!
+  subroutine updatePreviousQuantities(self, t)
+    class(dynamicRRPhysicsPackage_TI), intent(inout) :: self
+    integer(shortInt), intent(in)                 :: t
+    integer(shortInt)                             :: cIdx, pIdx, g
+    integer(shortInt), save                       :: idx0!, g
+    !$omp threadprivate(idx0)
+!     !$omp threadprivate(idx0, g)
+
+    ! Set values for quantities of previous time steps when entering transient calculation
+    if (t == 1) then
+        ! Fission rate in previous time step
+        self % prevFissionTD_1 = real(self % fissionScoreTD,defFlt) !--> DNP 2nd 240311
+        self % prevFission_1(:) = real(self % fissionScore,defFlt)   
+    end if
+           
+    !$omp parallel do schedule(static)
+    do cIdx = 1, self % nCells
+        idx0 = (cIdx - 1) * self % nG
+        
+        ! Update previous scalar flux, also to initialise source for next time step
+        !$omp simd
+        do g = 1, self % nG
+        
+            self % fluxHistTD(idx0 + g) = real(self % fluxScoresTD(idx0 + g, 1),defFlt)
+            self % prevFluxTD(idx0 + g) = real(self % fluxScoresTD(idx0 + g, 1), defFlt)
+            self % fluxScoresTD(idx0 + g, :) = ZERO
+            
+            self % fluxHist(idx0 + g) = real(self % fluxScores(idx0 + g),defFlt)
+            self % prevFlux(idx0 + g) = real(self % fluxScores(idx0 + g), defFlt) 
+            self % fluxScores(idx0 + g) = 0! ZERO
+        end do
+
+        ! Update fission sources of previous time steps
+        self % prevFissionTD_2(cIdx) = self % prevFissionTD_1(cIdx)
+        self % prevFissionTD_1(cIdx) = real(self % fissionScoreTD(cIdx),defFlt)
+        self % fissionScoreTD(cIdx) = ZERO
+
+        self % prevFission_2(cIdx) = self % prevFission_1(cIdx)
+        self % prevFission_1(cIdx) = real(self % fissionScore(cIdx),defFlt)
+        self % fissionScore(cIdx) = ZERO
+        
     end do
     !$omp end parallel do
     
-  end subroutine resetFluxes
+    ! Update previous precursors
+    !$omp parallel do schedule(static)
+    do pIdx = 1, self % nP * self % nCells
+        self % prevDnpTD(pIdx) = real(self % dnpScoresTD(pIdx),defFlt)
+        self % dnpScoresTD(pIdx) = ZERO
+
+        self % prevDnp(pIdx) = real(self % dnpScores(pIdx),defFlt)
+        self % dnpScores(pIdx) = ZERO
+    end do
+    !$omp end parallel do
+
+  end subroutine updatePreviousQuantities
+!<-- MK 240402   
 
 !--> MK 230822   
   !!
@@ -1603,31 +2300,48 @@ contains
   subroutine accumulateFluxAndKeffScores(self, t)
     class(dynamicRRPhysicsPackage_TI), intent(inout) :: self
     integer(shortInt), intent(in)                 :: t
-    real(defReal), save                           :: flux, DNP_val
+    real(defReal), save                           :: flux
     integer(shortInt)                             :: idx
-    !$omp threadprivate(flux, DNP_val)
+    !$omp threadprivate(flux)
 
     !$omp parallel do schedule(static)
-    do idx = 1, size(self % scalarFlux)
-      flux = real(self % scalarFlux(idx), defReal)
-      
-      self % fluxScores(idx,1) = self % fluxScores(idx, 1) + flux
-      self % fluxScores(idx,2) = self % fluxScores(idx, 2) + flux*flux
+    do idx = 1, self % nCells * self % nG
+        ! Transient scalar flux scores 
+        flux = real(self % scalarFluxTD(idx), defReal)        
+        self % fluxScoresTD(idx,1) = self % fluxScoresTD(idx, 1) + flux
+        self % fluxScoresTD(idx,2) = self % fluxScoresTD(idx, 2) + flux*flux
+        
+        ! Steady-state scalar flux scores
+        self % fluxScores(idx) = self % fluxScores(idx) + self % scalarFlux(idx)
     end do
     !$omp end parallel do
     
     !$omp parallel do schedule(static)
     do idx = 1, self % nP * self % nCells
-      DNP_val = real(self % DNP(idx),defReal)
-      self % DNPScores(idx) = self % DNPScores(idx) + DNP_val
+        ! Transient DNP scores 
+        self % dnpScoresTD(idx) = self % dnpScoresTD(idx) + self % dnpTD(idx)
+        
+        ! Steady-state DNP scores 
+        self % dnpScores(idx) = self % dnpScores(idx) + self % dnp(idx)       
     end do
     !$omp end parallel do
     
+    !$omp parallel do schedule(static)
+    do idx = 1, self % nCells
+        ! Transient fission source scores
+        self % fissionScoreTD(idx) = self % fissionScoreTD(idx) + self % fissionSourceTD(idx)
+        
+        ! Steady-state fission source scores
+        self % fissionScore(idx) = self % fissionScore(idx) + self % fissionSource(idx)
+    end do
+    !$omp end parallel do
+    
+    ! keff scores
     if (t == 1) then
         self % keffScore(1) = self % keffScore(1) + self % keff
         self % keffScore(2) = self % keffScore(2) + self % keff * self % keff
     end if
-    
+        
   end subroutine accumulateFluxAndKeffScores
 !<-- MK 230822  
 
@@ -1649,35 +2363,50 @@ contains
     N1 = 1.0_defReal/it
     
     !$omp parallel do schedule(static)
-    do idx = 1, size(self % scalarFlux)
-      self % fluxScores(idx,1) = self % fluxScores(idx, 1) * N1
-      self % fluxScores(idx,2) = self % fluxScores(idx, 2) * N1
-      self % fluxScores(idx,2) = Nm1 *(self % fluxScores(idx,2) - &
-            self % fluxScores(idx,1) * self % fluxScores(idx,1)) 
-      if (self % fluxScores(idx,2) <= ZERO) then
-        self % fluxScores(idx,2) = ZERO
-      else
-        self % fluxScores(idx,2) = sqrt(self % fluxScores(idx,2))
-      end if
+    do idx = 1, self % nCells * self % nG
+        ! Transient scalar flux scores 
+        self % fluxScoresTD(idx,1) = self % fluxScoresTD(idx, 1) * N1
+        self % fluxScoresTD(idx,2) = self % fluxScoresTD(idx, 2) * N1
+        self % fluxScoresTD(idx,2) = Nm1 *(self % fluxScoresTD(idx,2) - &
+                self % fluxScoresTD(idx,1) * self % fluxScoresTD(idx,1)) 
+        if (self % fluxScoresTD(idx,2) <= ZERO) then
+            self % fluxScoresTD(idx,2) = ZERO
+        else
+            self % fluxScoresTD(idx,2) = sqrt(self % fluxScoresTD(idx,2))
+        end if
+        
+        ! Steady-state scalar flux score
+        self % fluxScores(idx) = self % fluxScores(idx) * N1           
     end do
     !$omp end parallel do
     
-!--> DNP 230919
     !$omp parallel do schedule(static)
     do idx = 1, self % nP * self % nCells
-      self % DNPScores(idx) = self % DNPScores(idx) * N1
+        ! Transient DNP scores 
+        self % dnpScoresTD(idx) = self % dnpScoresTD(idx) * N1
+        
+        ! Steady-state DNP scores 
+        self % dnpScores(idx) = self % dnpScores(idx) * N1
     end do
     !$omp end parallel do
-!<-- DNP 230919
 
-!--> MK 230822 
+    !$omp parallel do schedule(static)
+    do idx = 1, self % nCells
+         ! Transient fission source scores
+        self % fissionScoreTD(idx) = self % fissionScoreTD(idx) * N1
+        
+        ! Steady-state fission source scores
+        self % fissionScore(idx) = self % fissionScore(idx) * N1
+    end do
+    !$omp end parallel do
+
+    ! keff scores
     if (t == 1) then
         self % keffScore(1) = self % keffScore(1) * N1
         self % keffScore(2) = self % keffScore(2) * N1
         self % keffScore(2) = sqrt(Nm1*(self % keffScore(2) - &
             self % keffScore(1) * self % keffScore(1))) 
     end if
-!<-- MK 230822 
 
   end subroutine finaliseFluxAndKeffScores
   
@@ -1811,12 +2540,12 @@ contains
           do g = 1, self % nG
             SigmaF = real(mat % getFissionXS(g, self % rand),defFlt)
 !--> MK 240205
-            idx = (cIdx - 1)* self % nG * self % nT + g
+            idx = (cIdx - 1)* self % nG + g
 !<-- MK 240205 
-            fiss(i) = fiss(i) + vol * self % fluxScores(idx,1) * SigmaF
+            fiss(i) = fiss(i) + vol * self % fluxScoresTD(idx,1) * SigmaF
             ! Is this correct? Also neglects uncertainty in volume - assumed small.
             fissSTD(i) = fissSTD(i) + &
-                    vol * vol * self % fluxScores(idx,2)*self % fluxScores(idx,2) * SigmaF * SigmaF
+                    vol * vol * self % fluxScoresTD(idx,2)*self % fluxScoresTD(idx,2) * SigmaF * SigmaF
           end do
         end if
 
@@ -1866,12 +2595,12 @@ contains
         if (i > 0) then
           do g = 1, self % nG
 !--> MK 240205
-            idx = (cIdx - 1)* self % nG * self % nT + g
+            idx = (cIdx - 1)* self % nG + g
 !<-- MK 240205 
-            fiss(i) = fiss(i) + vol * self % fluxScores(idx,1)
+            fiss(i) = fiss(i) + vol * self % fluxScoresTD(idx,1)
             ! Is this correct? Also neglects uncertainty in volume - assumed small.
             fissSTD(i) = fissSTD(i) + &
-                    self % fluxScores(idx,2)*self % fluxScores(idx,2) * vol * vol
+                    self % fluxScoresTD(idx,2)*self % fluxScoresTD(idx,2) * vol * vol
           end do
         end if
 
@@ -1909,9 +2638,9 @@ contains
         !$omp parallel do schedule(static)
         do cIdx = 1, self % nCells
 !--> MK 240205
-            idx = (cIdx - 1)* self % nG * self % nT + g
+            idx = (cIdx - 1)* self % nG + g
 !<-- MK 240205 
-            groupFlux(cIdx) = self % fluxScores(idx,1)
+            groupFlux(cIdx) = self % fluxScoresTD(idx,1)
         end do
         !$omp end parallel do
         call self % viz % addVTKData(real(groupFlux,defReal),name)
@@ -1921,7 +2650,7 @@ contains
         !$omp parallel do schedule(static)
         do cIdx = 1, self % nCells
           idx = (cIdx - 1)* self % nG + g1
-          groupFlux(cIdx) = self % fluxScores(idx,2) /self % fluxScores(idx,1)
+          groupFlux(cIdx) = self % fluxScoresTD(idx,2) /self % fluxScoresTD(idx,1)
         end do
         !$omp end parallel do
         call self % viz % addVTKData(real(groupFlux,defReal),name)
@@ -1963,7 +2692,7 @@ contains
         call out % startArray(name, resArrayShape)
         do cIdx = 1, self % nCells 
             idx = self % nG * (cIdx - 1) + g 
-            call out % addResult(real(self % fluxScores(idx,1),defReal), real(self % fluxScores(idx,2),defReal))           
+            call out % addResult(real(self % fluxScoresTD(idx,1),defReal), real(self % fluxScoresTD(idx,2),defReal))           
         end do
         call out % endArray()
         call out % endBlock()
@@ -1985,7 +2714,7 @@ contains
     type(outputFile)                              :: out
     character(nameLen)                            :: name
     character(nameLen)                            :: outputName
-    integer(shortInt), save                       :: idx, matIdx, i, g
+    integer(shortInt), save                       :: idx, matIdx, i, g, matIdx0
     integer(shortInt)                             :: cIdx
     real(defReal)                                 :: tOut
     real(defReal), save                           :: vol, SigmaF
@@ -1994,7 +2723,7 @@ contains
     real(defReal), dimension(:), allocatable      :: fiss, fissSTD
     class(baseMgNeutronMaterial), pointer, save   :: mat
     class(materialHandle), pointer, save          :: matPtr
-    !$omp threadprivate(idx, matIdx, i, mat, matPtr, vol, s, SigmaF, g)
+    !$omp threadprivate(idx, matIdx, i, mat, matPtr, vol, s, SigmaF, g, matIdx0)
 
     outputName = trim(self % outputFile)//'_fission_t'//numToChar(nOut)
     
@@ -2011,7 +2740,7 @@ contains
     fiss    = ZERO
     fissSTD = ZERO
 
-      ! Find whether cells are in map and sum their contributions
+    ! Find whether cells are in map and sum their contributions
     !$omp parallel do reduction(+: fiss, fissSTD)
     do cIdx = 1, self % nCells
         
@@ -2027,14 +2756,20 @@ contains
         s % r = self % cellPos(cIdx,:)
         i = self % resultsMap % map(s)
 
-        if ((i > 0) .AND. (matIdx /= 7)) then                               !TODO matIdx /= 7 only for C5G7 - TD3
+        if ((i > 0) .AND. (matIdx /= 8)) then                               !TODO matIdx /= 7 for C5G7-TD3, matIdx /= 8 for C5G7-TD1
           do g = 1, self % nG
-            SigmaF = real(mat % getFissionXS(g, self % rand),defFlt)        !TODO if Sigma_f changes, it also has to change here! Maybe read Sigma_f with other Sigmas?
+            matIdx0 = (matIdx - 1) * self % nG * self % nT + (t - 1) * self % nG + g    !TODO This works but should be checked again in the future
+            if (self % nuSigmaF(matIdx0) /= 0.0_defFlt) then
+                SigmaF = self % nuSigmaF(matIdx0) / self % nu(self % nG * (matIdx - 1) + g)
+            else
+                SigmaF = ZERO
+            end if
+   
             idx = self % nG * (cIdx - 1) + g 
-            fiss(i) = fiss(i) + vol * self % fluxScores(idx,1) * SigmaF
+            fiss(i) = fiss(i) + vol * self % fluxScoresTD(idx,1) * SigmaF
             ! Is this correct? Also neglects uncertainty in volume - assumed small. Covariance neglected
             fissSTD(i) = fissSTD(i) + &
-                   vol * vol * self % fluxScores(idx,2)*self % fluxScores(idx,2) * SigmaF * SigmaF
+                   vol * vol * self % fluxScoresTD(idx,2)*self % fluxScoresTD(idx,2) * SigmaF * SigmaF
           end do
         end if
 
@@ -2129,17 +2864,25 @@ contains
     end if
     self % nCells    = 0
     self % nMat      = 0
+    
+    ! Clean nuclear data
     if(allocated(self % sigmaT)) deallocate(self % sigmaT)
     if(allocated(self % sigmaS)) deallocate(self % sigmaS)
     if(allocated(self % nusigmaF)) deallocate(self % nuSigmaF)
     if(allocated(self % chi)) deallocate(self % chi)
-!--> MK 230302
+    if(allocated(self % nu)) deallocate(self % nu)
+!--> MK 240403
     if(allocated(self % vel)) deallocate(self % vel)
     if(allocated(self % chiP)) deallocate(self % chiP)
     if(allocated(self % chiD)) deallocate(self % chiD)
     if(allocated(self % lambda)) deallocate(self % lambda)
     if(allocated(self % beta)) deallocate(self % beta)
-!<-- MK 230302
+    
+    if(allocated(self % omega0)) deallocate(self % omega0)
+    if(allocated(self % omegaN)) deallocate(self % omegaN)
+    if(allocated(self % omega_1)) deallocate(self % omega_1)
+    if(allocated(self % omega_2)) deallocate(self % omega_2)
+!<-- MK 240403
 
     self % termination = ZERO
     self % dead        = ZERO
@@ -2162,20 +2905,38 @@ contains
     self % totalIt     = 0
     self % nTOut       = 0
     self % reduceLines = .false.
+    self % isotropic = .false.
 !<-- MK 230718
 
+    ! Clean scores
     self % keff        = ZERO
     self % keffScore   = ZERO
-    if(allocated(self % scalarFlux)) deallocate(self % scalarFlux)
+    if(allocated(self % scalarFluxTD)) deallocate(self % scalarFluxTD)
+    if(allocated(self % prevFluxTD)) deallocate(self % prevFluxTD)
     if(allocated(self % prevFlux)) deallocate(self % prevFlux)
+    if(allocated(self % fluxScoresTD)) deallocate(self % fluxScoresTD)
     if(allocated(self % fluxScores)) deallocate(self % fluxScores)
-    if(allocated(self % source)) deallocate(self % source)
-!--> DNP 230919
-    if(allocated(self % DNPScores)) deallocate(self % DNPScores)
-    if(allocated(self % DNP)) deallocate(self % DNP)
-    if(allocated(self % prevDNP)) deallocate(self % prevDNP)
+    if(allocated(self % sourceTD)) deallocate(self % sourceTD)
+    
+!--> MK 240403
+    if(allocated(self % dnpScoresTD)) deallocate(self % dnpScoresTD)
+    if(allocated(self % dnpTD)) deallocate(self % dnpTD)
+    if(allocated(self % prevDnpTD)) deallocate(self % prevDnpTD)
+    if(allocated(self % dnpScores)) deallocate(self % dnpScores)
+    if(allocated(self % dnp)) deallocate(self % dnp)
+    if(allocated(self % prevDnp)) deallocate(self % prevDnp)
+    if(allocated(self % fluxHistTD)) deallocate(self % fluxHistTD)
     if(allocated(self % fluxHist)) deallocate(self % fluxHist)
-!<-- DNP 230919
+
+    if(allocated(self % prevFissionTD_1)) deallocate(self % prevFissionTD_1)
+    if(allocated(self % prevFissionTD_2)) deallocate(self % prevFissionTD_2)
+    if(allocated(self % fissionScoreTD)) deallocate(self % fissionScoreTD)
+    if(allocated(self % fissionSourceTD)) deallocate(self % fissionSourceTD)
+    if(allocated(self % prevFission_1)) deallocate(self % prevFission_1)
+    if(allocated(self % prevFission_2)) deallocate(self % prevFission_2)
+    if(allocated(self % fissionScore)) deallocate(self % fissionScore)
+    if(allocated(self % fissionSource)) deallocate(self % fissionSource)
+!<-- MK 240403
     if(allocated(self % volume)) deallocate(self % volume)
     if(allocated(self % volumeTracks)) deallocate(self % volumeTracks)
     if(allocated(self % cellHit)) deallocate(self % cellHit)

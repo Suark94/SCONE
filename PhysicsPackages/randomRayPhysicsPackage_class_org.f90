@@ -1,4 +1,4 @@
-module randomRayPhysicsPackage_class
+module randomRayPhysicsPackage_class_org
 
   use numPrecision
   use universalVariables
@@ -236,6 +236,10 @@ module randomRayPhysicsPackage_class
 
   end type randomRayPhysicsPackage
 
+  public :: sourceUpdateKernel      ! To use these subroutines in time-dependent RR
+  public :: calculateKeff
+  public :: normaliseFluxAndVolume
+  
 contains
 
   !!
@@ -258,7 +262,7 @@ contains
     type(outputFile)                              :: test_out
     class(baseMgNeutronMaterial), pointer         :: mat
     class(materialHandle), pointer                :: matPtr
-    character(100), parameter :: Here = 'init (randomRayPhysicsPackage_class.f90)'
+    character(100), parameter :: Here = 'init (randomRayPhysicsPackage_class_org.f90)'
 
     call cpu_time(self % CPU_time_start)
     
@@ -646,7 +650,7 @@ contains
     real(defReal)                                 :: mu, phi
     real(defReal), dimension(3)                   :: u, rand3, x
     integer(shortInt)                             :: i, matIdx, cIdx
-    character(100), parameter :: Here = 'initialiseRay (randomRayPhysicsPackage_class.f90)'
+    character(100), parameter :: Here = 'initialiseRay (randomRayPhysicsPackage_class_org.f90)'
 
     i = 0
     mu = TWO * r % pRNG % get() - ONE
@@ -1389,4 +1393,4 @@ contains
 
   end subroutine kill
 
-end module randomRayPhysicsPackage_class
+end module randomRayPhysicsPackage_class_org

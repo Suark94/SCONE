@@ -1,0 +1,32 @@
+# The fortran modules provided by this target.
+provides
+ acecard_itest.mod
+ acelibraryread_itest.mod
+ aceneutrondatabase_itest.mod
+ aceneutronnuclide_itest.mod
+ basemgneutrondatabase_itest.mod
+ dictparser_itest.mod
+ elasticscattering_itest.mod
+ fissionce_itest.mod
+ geometryreg_itest.mod
+ geometrystd_itest.mod
+ imgbmp_itest.mod
+ neutronscattering_itest.mod
+ thermalscatteringdata_itest.mod
+ urrprobabilitytables_itest.mod
+ weightwindowsfield_itest.mod
+ wrapacecard_itest.mod
+ wrapacelibraryread_itest.mod
+ wrapaceneutrondatabase_itest.mod
+ wrapaceneutronnuclide_itest.mod
+ wrapbasemgneutrondatabase_itest.mod
+ wrapdictparser_itest.mod
+ wrapelasticscattering_itest.mod
+ wrapfissionce_itest.mod
+ wrapgeometryreg_itest.mod
+ wrapgeometrystd_itest.mod
+ wrapimgbmp_itest.mod
+ wrapneutronscattering_itest.mod
+ wrapthermalscatteringdata_itest.mod
+ wrapurrprobabilitytables_itest.mod
+ wrapweightwindowsfield_itest.mod

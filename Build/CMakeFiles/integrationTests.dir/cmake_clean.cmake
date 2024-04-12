@@ -1,0 +1,40 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/integrationTests.dir/generatedInt/aceCard_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/aceLibraryRead_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/aceNeutronDatabase_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/aceNeutronNuclide_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/baseMgNeutronDatabase_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/dictParser_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/elasticScattering_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/fissionCE_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/geometryReg_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/geometryStd_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/imgBmp_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/neutronScattering_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/thermalScatteringData_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/urrProbabilityTables_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/generatedInt/weightWindowsField_iTest.f90.o"
+  "CMakeFiles/integrationTests.dir/home/mhgk4/pFUnit/include/driver.F90.o"
+  "generatedInt/aceCard_iTest.f90"
+  "generatedInt/aceLibraryRead_iTest.f90"
+  "generatedInt/aceNeutronDatabase_iTest.f90"
+  "generatedInt/aceNeutronNuclide_iTest.f90"
+  "generatedInt/baseMgNeutronDatabase_iTest.f90"
+  "generatedInt/dictParser_iTest.f90"
+  "generatedInt/elasticScattering_iTest.f90"
+  "generatedInt/fissionCE_iTest.f90"
+  "generatedInt/geometryReg_iTest.f90"
+  "generatedInt/geometryStd_iTest.f90"
+  "generatedInt/imgBmp_iTest.f90"
+  "generatedInt/neutronScattering_iTest.f90"
+  "generatedInt/thermalScatteringData_iTest.f90"
+  "generatedInt/urrProbabilityTables_iTest.f90"
+  "generatedInt/weightWindowsField_iTest.f90"
+  "integrationTests"
+  "integrationTests.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang Fortran)
+  include(CMakeFiles/integrationTests.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()
