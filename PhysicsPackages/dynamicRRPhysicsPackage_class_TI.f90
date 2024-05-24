@@ -263,16 +263,26 @@ module dynamicRRPhysicsPackage_class_TI
     integer(shortInt)  :: window      = 0
     real(defFlt)       :: tstp        = ZERO
     real(defFlt)       :: initVal     = ZERO
-    integer(shortInt)  :: totalIt      = 0         
+    integer(shortInt)  :: totalIt     = 0        
+    integer(shortInt)  :: totalAct    = 0         
+    integer(shortInt)  :: totalInact  = 0         
     integer(shortInt)  :: nTOut       = 0
     logical(defBool)   :: reduceLines = .false.
     logical(defBool)   :: isotropic = .false.
 !<-- MK 230718   
+!--> MK 240523
+    real(defReal)      :: AccVol = ZERO
+    real(defFlt)       :: sarePrec = ZERO
+    real(defFlt)       :: rmsPrec = ZERO
+!<-- MK 240523
 
     ! Data space - absorb all nuclear data for speed
     real(defFlt), dimension(:), allocatable     :: sigmaT
     real(defFlt), dimension(:), allocatable     :: nuSigmaF
     real(defFlt), dimension(:), allocatable     :: sigmaS
+!--> MK 240517
+    real(defFlt), dimension(:), allocatable     :: sigmaF
+!<-- MK 240517
     real(defFlt), dimension(:), allocatable     :: chi
     real(defFlt), dimension(:), allocatable     :: nu
 
@@ -299,6 +309,10 @@ module dynamicRRPhysicsPackage_class_TI
     real(defFlt), dimension(:), allocatable     :: sourceTD
     real(defFlt), dimension(:), allocatable     :: prevFissionTD_1
     real(defFlt), dimension(:), allocatable     :: prevFissionTD_2
+!--> MK 240517
+    real(defReal), dimension(:,:), allocatable  :: fissionRateScore
+    real(defFlt), dimension(:), allocatable     :: fissionRate
+!<-- MK 240517
     real(defReal), dimension(:), allocatable    :: fissionScoreTD
     real(defFlt), dimension(:), allocatable     :: fissionSourceTD
     real(defReal), dimension(:), allocatable    :: dnpScoresTD
@@ -361,6 +375,9 @@ module dynamicRRPhysicsPackage_class_TI
     procedure, private :: printTransientFlux
     procedure, private :: printFissionRate
     procedure, private :: updatePreviousQuantities
+!--> MK 240517
+    procedure, private :: calculateFissionRate
+!<-- MK 240517
 
   end type dynamicRRPhysicsPackage_TI
 
@@ -376,7 +393,7 @@ contains
     class(dictionary), intent(inout)              :: dict
 !--> MK 230718
     integer(shortInt)                             :: seed_temp, i, g, g1, m, t, nP, nPNew, p, idx0, m2
-    real(defReal)                                 :: tstpReal, initReal, outTemp
+    real(defReal)                                 :: tstpReal, initReal, outTemp, precReal
     type(transientData)                           :: variations      
     integer(shortInt)                             :: tStart, tEnd, baseIdx0, baseIdx1, baseIdx, tCnt
     real(defFlt)                                  :: magnitude
@@ -400,6 +417,10 @@ contains
     class(fissionMG), pointer                     :: fiss
     real(defFlt)                                  :: omega, timeXS, velInv
 !<-- DNP 230918
+!--> MK 240412 3D transient
+    real(defFlt)                                  :: rodPartial, rodCellsInserted
+    integer(shortInt)                             :: rodFull
+!<-- MK 240412 3D transient
     character(100), parameter :: Here = 'init (dynamicRRPhysicsPackage_class_TI.f90)'
 
     call cpu_time(self % CPU_time_start)
@@ -431,6 +452,14 @@ contains
     if (self % nT > 1) then
         self % nT = self % nT + 1 
     end if
+    
+!--> MK 240523
+    call dict % get(precReal, 'sarePrec')
+    self % sarePrec = real(precReal, defFlt)
+    
+    call dict % get(precReal, 'rmsPrec')
+    self % rmsPrec = real(precReal, defFlt)
+!<-- MK 240523
     
     ! Reduce number of ouput lines?
     call dict % getOrDefault(self % reduceLines, 'reduceLines', .false.)
@@ -583,7 +612,6 @@ contains
     ! Store number of cells in geometry for convenience
     self % nCells = self % geom % numberOfCells()
 
-!--> MK 240403
     ! Allocate results space
     allocate(self % scalarFluxTD(self % nCells * self % nG))
     allocate(self % prevFluxTD(self % nCells * self % nG))
@@ -591,9 +619,13 @@ contains
     allocate(self % sourceTD(self % nCells * self % nG))
     allocate(self % fluxHistTD(self % nCells * self % nG))
     allocate(self % prevFissionTD_1(self % nCells))
-    allocate(self % prevFissionTD_2(self % nCells)) 
+    allocate(self % prevFissionTD_2(self % nCells))
     allocate(self % fissionScoreTD(self % nCells))
     allocate(self % fissionSourceTD(self % nCells))
+!--> MK 240517
+    allocate(self % fissionRateScore(self % nCells, 2))
+    allocate(self % fissionRate(self % nCells))
+!<-- MK 240517
 
     allocate(self % scalarFlux(self % nCells * self % nG))
     allocate(self % prevFlux(self % nCells * self % nG))
@@ -610,7 +642,6 @@ contains
     allocate(self % cellHit(self % nCells))
     allocate(self % cellFound(self % nCells))
     allocate(self % cellPos(self % nCells, 3))
-!<-- MK 240403
     
     ! Set active length traveled per iteration
     self % lengthPerIt = (self % termination - self % dead) * self % pop
@@ -628,11 +659,13 @@ contains
 !--> MK 230307
     allocate(self % sigmaT(self % nMat * self % nG * self % nT))
     allocate(self % nuSigmaF(self % nMat * self % nG * self % nT))
+!--> MK 240517
+    allocate(self % SigmaF(self % nMat * self % nG * self % nT))
+!<-- MK 240517
     allocate(self % chi(self % nMat * self % nG))
     allocate(self % nu(self % nMat * self % nG))
     allocate(self % sigmaS(self % nMat * self % nG * self % nG * self % nT))
-!     allocate(self % vel(self % nMat * self % nG))
-    allocate(self % vel(self % nMat * self % nG * self % nT))   !TODO changed
+    allocate(self % vel(self % nMat * self % nG * self % nT))
 !<-- MK 230307
 
 !--> MK 230307
@@ -645,23 +678,18 @@ contains
       mat     => baseMgNeutronMaterial_CptrCast(matPtr)
       do g = 1, self % nG
         self % chi(self % nG * (m - 1) + g) = real(mat % getChi(g, self % rand),defFlt)
-!--> MK 240411 !TODO new
+!--> MK 240411
         self % nu(self % nG * (m - 1) + g) = real(mat % getNu(g, self % rand),defFlt)
-!         if (mat % getFissionXS(g, self % rand) /= ZERO) then
-!             self % nu(self % nG * (m - 1) + g) = &
-!                 real(mat % getNuFissionXS(g, self % rand) / mat % getFissionXS(g, self % rand),defFlt)
-!         else
-!             self % nu(self % nG * (m - 1) + g) = ZERO
-!         end if
-!         if (self % nT > 1) then 
-!             self % vel(self % nG * (m - 1) + g) = real(mat % getVel(g, self % rand),defFlt)
-!         end if
-!<-- MK 240411 !TODO new
+!<-- MK 240411
         do t = 1, self % nT
-            self % vel(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = real(mat % getVel(g, self % rand),defFlt) !TODO changed
+            self % vel(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = real(mat % getVel(g, self % rand),defFlt)
             self % sigmaT(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = real(mat % getTotalXS(g, self % rand),defFlt) 
-            self % nuSigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
-            real(mat % getNuFissionXS(g, self % rand),defFlt) 
+!             self % nuSigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+!                 real(mat % getNuFissionXS(g, self % rand),defFlt) 
+!--> MK 240517
+            self % sigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+                real(mat % getFissionXS(g, self % rand),defFlt) 
+!<-- MK 240517
             do g1 = 1, self % nG
                 self % sigmaS(self % nG * self % nG * self % nT * (m - 1) + (t - 1) * self % nG * self % nG + &
                 self % nG * (g - 1) + g1) = real(mat % getScatterXS(g1, g, self % rand), defFlt) 
@@ -709,8 +737,10 @@ contains
         
         select case(xsName)
             case('fission')
-                allocate (xsType(size(self % nuSigmaF)))        !Do they need to be deallocated
-                xsType = self % nuSigmaF
+!--> MK 240517
+                allocate (xsType(size(self % sigmaF)))        !Do they need to be deallocated
+                xsType = self % sigmaF
+!<-- MK 240517
             case('total')
                 allocate (xsType(size(self % sigmaT)))
                 xsType = self % sigmaT
@@ -785,7 +815,9 @@ contains
         
         select case(xsName)
             case('fission')
-                self % nuSigmaF = xsType
+!--> MK 240517
+                self % sigmaF = xsType
+!<-- MK 240517
             case('total')
                 self % sigmaT = xsType
             case('scatter')
@@ -807,8 +839,12 @@ contains
 !       mat     => baseMgNeutronMaterial_CptrCast(matPtr)
 !       do g = 1, self % nG
 !         do t = 2, self % nT
-!             self % nuSigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
-!             real(mat % getNuFissionXS(g, self % rand)*1.001,defFlt) 
+! !             self % nuSigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+! !             real(mat % getNuFissionXS(g, self % rand)*1.001,defFlt)
+! !--> MK 240517
+!             self % sigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+!             real(mat % getFissionXS(g, self % rand)*1.001,defFlt)
+! !<-- MK 240517
 !         end do
 !       end do
 !     end do
@@ -898,6 +934,133 @@ contains
 !         end do
 !     end do
 ! !<-- MK 240404
+
+! !--> MK 240412 3D Control rod insertion !TODO This is only provisional
+! !     omega = 0.01
+! !     m = 2       ! rod inside
+! !     matPtr  => self % mgData % getMaterial(m)
+! !     mat     => baseMgNeutronMaterial_CptrCast(matPtr)
+!     
+!     m2 = 8      ! CR
+!     matPtr2  => self % mgData % getMaterial(m2)
+!     mat2     => baseMgNeutronMaterial_CptrCast(matPtr2)
+!     
+!     do g = 1, self % nG
+!     
+!         do t = 2, self % nT
+!             timeXS = (t-1) * self % tstp
+!             
+!             ! Insertion
+!             if (timeXS <= 2) then
+!                 rodCellsInserted = 17 * timeXS
+!                 rodFull = FLOOR(rodCellsInserted)
+!                 rodPartial = rodCellsInserted - rodFull
+!                 
+! !                 if (g == 1) then
+! !                     print *, timeXS
+! !                     print *, rodCellsInserted
+! !                     print *, rodFull
+! !                     print *, rodPartial
+! !                     print *
+! !                 end if
+!                 
+!                 if (rodCellsInserted > 34) then
+!                     print *, "Number of inserted rod cells: ", rodCellsInserted, " at t = ", timeXS
+!                     rodPartial = 0.0_defFlt
+!                 end if
+!                 
+!                 do m = 8 + 1, 8 + rodFull !matIdx for bank 1 starts at 8
+!                   self % sigmaT(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+!                     real(mat2 % getTotalXS(g, self % rand),defFlt)
+!                   self % vel(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = real(mat2 % getVel(g, self % rand),defFlt)
+!                     
+!                   do g1 = 1, self % nG
+!                     self % sigmaS(self % nG * self % nG * self % nT * (m - 1) + (t - 1) * self % nG * self % nG + &
+!                         self % nG * (g - 1) + g1) = real(mat2 % getScatterXS(g1, g, self % rand),defFlt)
+!                   end do
+!                 end do
+!                 
+!                 m = 8 + rodFull + 1
+!                 self % sigmaT(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+!                     real(mat % getTotalXS(g, self % rand),defFlt) + rodPartial * &
+!                     (real(mat2 % getTotalXS(g, self % rand) - mat % getTotalXS(g, self % rand),defFlt)) * timeXS
+!                     
+!                 velInv = real(ONE / mat % getVel(g, self % rand),defFlt) + rodPartial * &
+!                     (real((ONE / mat2 % getVel(g, self % rand)) - (ONE / mat % getVel(g, self % rand)),defFlt)) * timeXS
+!                 self % vel(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = 1.0_defFlt / velInv
+!                     
+!                 do g1 = 1, self % nG
+!                     self % sigmaS(self % nG * self % nG * self % nT * (m - 1) + (t - 1) * self % nG * self % nG + &
+!                         self % nG * (g - 1) + g1) = real(mat % getScatterXS(g1, g, self % rand), defFlt) &
+!                         + rodPartial * &
+!                         (real(mat2 % getScatterXS(g1, g, self % rand) - mat % getScatterXS(g1, g, self % rand), defFlt)) * timeXS
+!                 end do
+! !                 
+! !                 if (g == 1) then
+! !                     print *, m
+! !                     print *, self % sigmaT(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g)
+! !                     print *, rodPartial
+! !                     print *
+! !                 end if
+!                 
+!             end if
+!             
+!             ! Extraction
+!             if (timeXS > 2 .AND. timeXS <= 4) then
+!                 rodCellsInserted = -17 * timeXS + 34
+!                 rodFull = FLOOR(rodCellsInserted)
+!                 rodPartial = rodCellsInserted - rodFull
+!                 
+!                 if (rodCellsInserted < 0) then
+!                     print *, "Number of inserted rod cells: ", rodCellsInserted, " at t = ", timeXS
+!                     rodFull = 0
+!                     rodPartial = 0.0_defFlt
+!                 end if
+!                 
+!                 do m = 8 + 1, 8 + rodFull !matIdx for bank 1 starts at 8
+!                   self % sigmaT(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+!                     real(mat2 % getTotalXS(g, self % rand),defFlt)
+!                   self % vel(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = real(mat2 % getVel(g, self % rand),defFlt)
+!                     
+!                   do g1 = 1, self % nG
+!                     self % sigmaS(self % nG * self % nG * self % nT * (m - 1) + (t - 1) * self % nG * self % nG + &
+!                         self % nG * (g - 1) + g1) = real(mat2 % getScatterXS(g1, g, self % rand),defFlt) 
+!                   end do
+!                 end do
+!                 
+!                 m = 8 + rodFull + 1
+!                 self % sigmaT(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+!                     real(mat % getTotalXS(g, self % rand),defFlt) + rodPartial * &
+!                     (real(mat2 % getTotalXS(g, self % rand) - mat % getTotalXS(g, self % rand),defFlt)) * timeXS
+!                     
+!                 velInv = real(ONE / mat % getVel(g, self % rand),defFlt) + rodPartial * &
+!                     (real((ONE / mat2 % getVel(g, self % rand)) - (ONE / mat % getVel(g, self % rand)),defFlt)) * timeXS
+!                 self % vel(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = 1.0_defFlt / velInv
+!                     
+!                 do g1 = 1, self % nG
+!                     self % sigmaS(self % nG * self % nG * self % nT * (m - 1) + (t - 1) * self % nG * self % nG + &
+!                         self % nG * (g - 1) + g1) = real(mat % getScatterXS(g1, g, self % rand), defFlt) &
+!                         + rodPartial * &
+!                         (real(mat2 % getScatterXS(g1, g, self % rand) - mat % getScatterXS(g1, g, self % rand), defFlt)) * timeXS
+!                 end do
+!             end if
+!             
+! !             self % vel(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = 1.0_defFlt / velInv !TODO
+! 
+!         end do
+!     end do
+! !<-- MK 240412
+
+!--> MK 240517
+    do m = 1, self % nMat
+      do g = 1, self % nG
+        do t = 1, self % nT
+            self % nuSigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g) = &
+                self % nu(self % nG * (m - 1) + g) * self % sigmaF(self % nG * self % nT * (m - 1) + (t - 1) * self % nG + g)
+        end do
+      end do
+    end do
+!<-- MK 240517
 
 !--> DNP 230918
     ! Prepare delayed neutron data
@@ -1041,15 +1204,29 @@ contains
     type(ray), save                               :: r
     type(RNG), target, save                       :: pRNG
     real(defFlt)                                  :: hitRate, ONE_KEFF
-    real(defFlt), dimension(self % window)        :: entropyVec
+    real(defReal), dimension(self % window)        :: entropyVec
     real(defReal)                                 :: elapsed_T, transport_T, scaleFac
     logical(defBool)                              :: stoppingCriterion, isActive
-    integer(shortInt)                             :: i, itInac, itAct, it, t
+    integer(shortInt)                             :: i, itInac, itAct, it, t, nFiss
     integer(longInt), save                        :: ints
     integer(longInt)                              :: intersections
     logical(defBool)                              :: convBool, entropyBool
-    integer(shortInt)                             :: tCnt, outCnt, actCycles
-    !$omp threadprivate(pRNG, r, ints)
+    integer(shortInt)                             :: tCnt, outCnt
+!--> MK 240517
+    real(defFlt)                                  :: sare
+    integer(shortInt)                             :: idx
+    real(defReal)                                 :: N1, Nm1, stdSum
+    real(defReal), save                           :: fluxMean, fluxStd
+!<-- MK 240517
+!--> MK 240520
+    real(defFlt)                                  :: RMS, RMS0
+    real(defFlt), save                            :: sumValue
+    integer(shortInt)                             :: cIdx, cnt, popTemp
+    real(defFlt), save                            :: sumMean1, sumMean2, err 
+    integer(shortInt), save                       :: g, baseIdx
+    real(defReal), dimension(self % nCells)       :: fluxNew, fluxOld
+    !$omp threadprivate(sumMean1, sumMean2, err, pRNG, r, ints, fluxMean, fluxStd, sumValue, g, baseIdx)
+!<-- MK 240520
 
     ! Reset and start timer
     call timerReset(self % timerMain)
@@ -1061,6 +1238,7 @@ contains
     self % keffScore  = ZERO        
    
     self % fluxScoresTD = ZERO
+    self % fissionRateScore = ZERO
     self % prevFluxTD = 1.0_defFlt  
     self % fluxHistTD = ZERO   
     self % fissionScoreTD = ZERO
@@ -1082,11 +1260,23 @@ contains
     tCnt = 0
     outCnt = 0
     self % totalIt = 0
+    self % totalAct = 0
+    self % totalInact = 0
     self % volumeTracks = ZERO  ! To score volumes over time steps
     self % volume       = ZERO  !
+!--> MK 240523   
+    self % AccVol = ZERO
+    RMS = 0.0_defFlt
+!<-- MK 240523   
     
     ! Time-stepping
     do t = 1, self % nT
+    
+!--> MK 240520
+    cnt = 0
+    fluxNew = 0.0_defFlt
+    fluxOld = 0.0_defFlt
+!<-- MK 240520
         
         tCnt = tCnt + 1     
 
@@ -1111,6 +1301,7 @@ contains
         stoppingCriterion = .true.        
         convBool = .true.
         entropyVec = 0.0_defFlt
+        sare = 1.0_defFlt
         
         ! Power iteration
         do while( stoppingCriterion )
@@ -1119,6 +1310,8 @@ contains
             
             if (isActive) then
                 itAct = itAct + 1
+                self % totalAct = self % totalAct + 1
+                self % totalInact = self % totalInact + 1
             else
                 itInac = itInac + 1
             end if
@@ -1139,6 +1332,23 @@ contains
             call timerReset(self % timerTransport)
             call timerStart(self % timerTransport)
             intersections = 0
+            
+!--> MK 240523
+            ! Adjustment of ray population size over convergence 
+            if (.not. isActive) then
+!             if ((t > 1) .and. (.not. isActive)) then
+!               self % pop  = INT(650* 0.1 * (1 + it/1000))
+!               self % pop  = INT(650* ((0.9 * RMS)/(self % convPrec - 1) + (0.1 - 0.9/(self % convPrec - 1))))
+!               popTemp  = INT(650* ((0.9/log(2E-4)) * log(RMS) + 0.1))
+                if (it > 2+2) then
+                    popTemp = INT(650* ((0.9/log(2E-4/RMS0)) * log(RMS/RMS0) + 0.1))
+                    if (popTemp > self % pop) self % pop = popTemp
+                else
+                    self % pop = INT(650* 0.1)
+                    RMS0 = RMS
+                end if 
+            end if
+!<-- MK 240523
             
             !$omp parallel do schedule(runtime) reduction(+: intersections) 
             do i = 1, self % pop
@@ -1188,19 +1398,124 @@ contains
             scaleFac = (self % initVal / sum(self % scalarFlux))
             self % scalarFlux = self % scalarFlux * real(scaleFac, defFlt)         
 
-            ! Accumulate flux scores
-            if (isActive) call self % accumulateFluxAndKeffScores(t)
+!--> MK 240517
+            ! Source Average Relative Error convergence critertion for active cycles
+            if (isActive) then
+!--> MK 240517
+                !$omp parallel do schedule(static)
+                do i = 1, self % nCells
+                    call self % calculateFissionRate(i, t)
+                end do
+                !$omp end parallel do
+!<-- MK 240517
+
+                call self % accumulateFluxAndKeffScores(t)
+            
+                if (itAct /= 1) then
+                    Nm1 = 1.0_defReal/(itAct - 1)
+                else
+                    Nm1 = 1.0_defReal
+                end if
+                N1 = 1.0_defReal/itAct
                 
-            ! Check convergence
-            call self % calculateEntropy(entropyVec, entropyBool)
-
-            stoppingCriterion = (itAct < self % active)
-            actCycles = self % active
-
-            if (convBool .AND. (it >= self % inactive) .AND. entropyBool) then   
-                isActive = .true.
-                convBool = .false.
+                stdSum = 0.0_defFlt
+                nFiss = 0
+                
+                !$omp parallel do schedule(static) reduction(+: stdSum, nFiss) 
+                do idx = 1, self % nCells
+                    fluxMean = self % fissionRateScore(idx, 1) * N1
+                    fluxStd = self % fissionRateScore(idx, 2) * N1
+                    fluxStd = Nm1 *(fluxStd - fluxMean * fluxMean) 
+                    
+                    if (fluxStd <= ZERO) then
+                        fluxStd = ZERO
+                    else
+                        nFiss = nFiss + 1
+                        fluxStd = sqrt(fluxStd)
+                        fluxStd = fluxStd / fluxMean
+                    end if      
+                    
+                    stdSum = stdSum + fluxStd
+                    
+                end do
+                !$omp end parallel do
+                
+                sare = real(stdSum/nFiss,defFlt)
             end if
+!<-- MK 240517
+
+!--> MK 240520
+            ! RMS convergence criterion for inactive cycles
+!             if ((t > 1) .and. (.not. isActive)) then
+            if (.not. isActive) then
+            
+                fluxOld  = fluxNew
+                
+                !$omp parallel do schedule(static)
+                do cIdx = 1, self % nCells
+                    
+                    sumValue = 0.0_defFlt
+                    
+                    baseIdx = self % nG * (cIdx - 1)
+                    do g = 1, self % nG
+                        sumValue = sumValue + self % scalarFlux(baseIdx + g)
+                    end do
+                    
+                    fluxNew(cIdx) = fluxNew(cIdx) + sumValue
+                    
+                end do 
+                !$omp end parallel do
+
+                if (it > 2) then
+                    RMS = 0.0_defFlt
+                    
+                    !$omp parallel do schedule(static) reduction(+: RMS) 
+                    do cIdx = 1, self % nCells
+                        
+                        sumMean1 = real(fluxOld(cIdx) / (it - 1) ,defFlt)
+                        sumMean2 = real(fluxNew(cIdx) / it ,defFlt)
+                        
+                        err = (sumMean2 - sumMean1) / sumMean2 
+
+                        RMS = RMS + err*err
+                    end do  
+                    !$omp end parallel do
+                            
+                    !Stop execution if RMS error is Nan
+                    if (RMS /= RMS) then
+                            print *, RMS, err, sumMean1, sumMean2, sumValue
+                            call fatalError('Convergence','RMS is NaN')
+                    end if
+                    
+                    RMS = sqrt(RMS/self % nCells)
+                end if
+            end if 
+            
+            stoppingCriterion = (sare > self % sarePrec .or. itAct < 10)
+!<-- MK 240520
+
+!--> MK 240520
+            ! Check convergence of active cycles
+!              if (.not. isActive .and. t == 1) call self % calculateEntropy(entropyVec, entropyBool)
+! 
+!             ! Check convergence of inactive cycles
+!             if ( t == 1 .AND. convBool .AND. (it >= self % inactive)) then   
+!                 isActive = .true.
+!                 convBool = .false.
+!             end if
+            
+!             if (t > 1 .AND. convBool .AND. RMS < 2E-4) then
+            if (convBool .AND. RMS < self % rmsPrec) then
+                cnt = cnt + 1
+                
+                if(cnt == 10) then      ! Convergence criterion should be met for 10 consecutive cycles
+                    isActive = .true.
+                    convBool = .false.
+                end if
+            else
+                cnt = 0                 !TODO get rid of cnt?
+            end if
+!<-- MK 240530
 
             ! Set previous iteration flux to scalar flux and zero scalar flux
             call self % resetFluxes()
@@ -1214,14 +1529,17 @@ contains
             ! Display progress
             call printFishLineR(it)
             print *
-            if(isActive) then
-                print *, 'Iteration: ', numToChar(itAct), ' of ', numToChar(actCycles)
-                if (.not. self % reduceLines) print *,'Active iterations'
-            else
-                print *, 'Iteration: ', numToChar(it), ' of ', numToChar(self % inactive)
-                if (.not. self % reduceLines) print *,'Inactive iterations'
-            end if
             print *, 'Time step: ', numToChar(t), ' of ', numToChar(self % nT)
+            if(isActive) then
+                print *, 'Iteration: ', numToChar(itAct)
+                if (.not. self % reduceLines) print *,'Active iterations'
+                if (.not. self % reduceLines) print *, 'SARE: ', trim(numToChar(real(sare,defReal)))
+            else
+                print *, 'Iteration: ', numToChar(it)
+                if (.not. self % reduceLines) print *,'Inactive iterations'
+                if (.not. self % reduceLines) print *, 'RMS: ', trim(numToChar(real(RMS,defReal)))
+            end if
+            if (.not. self % reduceLines) print *, 'Ray population: ', self % pop
             if (.not. self % reduceLines) print *, 'Cell hit rate: ', trim(numToChar(real(hitRate,defReal)))
             if (.not. self % reduceLines) print *, 'keff: ', trim(numToChar(real(self % keff,defReal)))
             print *, 'Elapsed time: ', trim(secToChar(elapsed_T))
@@ -1258,34 +1576,72 @@ contains
   !!
   subroutine calculateEntropy(self, entropyVec, entropyBool)
       class(dynamicRRPhysicsPackage_TI), intent(inout) :: self
-      real(defFlt), dimension(self % window), intent(inout)   :: entropyVec
+      real(defReal), dimension(self % window), intent(inout)   :: entropyVec
       logical(defBool), intent(out)                 :: entropyBool
-      real(defFlt)                                  :: entropyMean1, entropyMean2, entropyStd1, entropyStd2
+      real(defReal)                                  :: entropyMean1, entropyMean2, entropyStd1, entropyStd2
       real(defFlt)                                  :: sumFlux
-      real(defFlt)                                  :: newEntropy
+      real(defReal)                                  :: newEntropy
       integer(shortInt)                             :: cIdx, halfwindow
-      integer(shortInt), save                       :: idx
       real(defFlt), save                            :: P
-      !$omp threadprivate(P, idx)
+      !$omp threadprivate(P)
+
+!     integer(shortInt), intent(in)                         :: t
+!       real(defFlt), dimension(self % nCells)   :: fissTemp
+!       integer(shortInt), save                            :: matIdx, g, idx
+!       real(defFlt), save                                  :: vol
+!       
+!       !$omp threadprivate(P, matIdx, g, idx, vol)
       
       halfwindow = INT(self % window * 0.5)
+
+! !--> MK 240521
+! if (t>1) then
+!     fissTemp = 0.0_defFlt
+!     
+!     !$omp parallel do reduction(+: fissTemp)
+!     do cIdx = 1, self % nCells
+!         
+!         ! Identify material
+!         matIdx =  self % geom % geom % graph % getMatFromUID(cIdx) 
+!        vol = real(self % volume(cIdx),defFlt)
+! 
+!         if (vol < volume_tolerance) cycle
+! 
+!         if (matIdx == 1) then    
+!           do g = 1, self % nG
+!             idx = self % nG * (cIdx - 1) + g 
+!             fissTemp(cIdx) = fissTemp(cIdx) + self % scalarFlux(idx)
+!           end do
+!         end if
+!     end do
+!     !$omp end parallel do   
+! else
+!     fissTemp = self % fissionRate
+! end if
+! !<-- MK 240521
       
+!--> MK 240517      
       ! Calculate Shannon entropy
-      sumFlux = sum(self % scalarFluxTD)
+!       sumFlux = sum(fissTemp)
+
+      sumFlux = sum(self % fissionRate)
+      
       entropyVec(1:(self % window-1)) = entropyVec(2:self % window)
-      newEntropy = 0.0_defFlt
+      newEntropy = ZERO
       
       !$omp parallel do schedule(static) reduction(+: newEntropy) 
       do cIdx = 1, self % nCells
-        idx = self % nG * (cIdx - 1)
-        P = sum(self % scalarFluxTD(idx + 1 : idx + self % nG)) / sumFlux
+        P = self % fissionRate(cIdx) / sumFlux
+!         P = fissTemp(cIdx) / sumFlux
+
         if (P <= ZERO) then
             newEntropy = newEntropy
         else
-            newEntropy = newEntropy - P * log(P)
+            newEntropy = newEntropy - real(P * (log(P) / log(2.0)), defReal) 
         end if
       end do
       !$omp end parallel do
+!<-- MK 240517
       
       ! Calculate average and standard deviation over either half of travelling window
       entropyVec(self % window) = newEntropy
@@ -1308,6 +1664,13 @@ contains
       else
         entropyStd2 = sqrt(entropyStd2)
       end if
+      
+!       print *
+!       print *, ABS(entropyMean1 - entropyMean2), entropyStd2, self % window
+! !       print *, entropyMean1, entropyMean2
+!       print *, newEntropy
+! !       print *, ABS(entropyMean1 - entropyMean2)/entropyMean2
+!       print *
       
       ! Check whether Shannon entropy lies within standard deviation
       entropyBool = (ABS(entropyMean1 - entropyMean2) < entropyStd2 .AND. ABS(entropyMean1 - entropyMean2) < entropyStd1)
@@ -1765,8 +2128,14 @@ contains
     real(defFlt), save                            :: total, vol
     !$omp threadprivate(total, vol, idx, g, matIdx)
 
-    norm = real(ONE / self % lengthPerIt, defFlt)   
-    normVol = ONE / (self % lengthPerIt * self % totalIt)        ! To score volumes over time steps
+!--> MK 240523
+!     norm = real(ONE / self % lengthPerIt, defFlt)   
+!     normVol = ONE / (self % lengthPerIt * self % totalIt)        ! To score volumes over time steps
+!     
+    norm = real(ONE / ((self % termination - self % dead) * self % pop), defFlt)    !TODO I guess lengthPerIt could suimply be updated somewhere as well?
+    self % AccVol = self % AccVol + ((self % termination - self % dead) * self % pop)
+    normVol = ONE / self % AccVol
+!<-- MK 240523
 
     !$omp parallel do schedule(static)
     do cIdx = 1, self % nCells
@@ -1807,7 +2176,10 @@ contains
     integer(shortInt)                             :: cIdx
     !$omp threadprivate(total, vol, idx, g, matIdx)
 
-    norm = real(ONE / self % lengthPerIt, defFlt)
+!--> MK 240523
+!     norm = real(ONE / self % lengthPerIt, defFlt)
+    norm = real(ONE / ((self % termination - self % dead) * self % pop), defFlt)
+!<-- MK 240523
 
     !$omp parallel do schedule(static)
     do cIdx = 1, self % nCells
@@ -1898,8 +2270,8 @@ contains
     velocity => self % vel((matIdx2 + 1) : (matIdx2 + self % nG))
     total => self % sigmaT((matIdx2 + 1) : (matIdx2 + self % nG))                        
     scatterXS => self % sigmaS((matIdx2 * self % nG + 1) : (matIdx2 * self % nG + self % nG*self % nG))
-    nuFission => self % nuSigmaF((matIdx2 + 1) : (matIdx2 + self % nG)) 
-    
+    nuFission => self % nuSigmaF((matIdx2 + 1) : (matIdx2 + self % nG))
+
     baseIdx = self % ng * (cIdx - 1)
     fluxVec => self % prevFluxTD((baseIdx+1) : (baseIdx+self % nG))
     
@@ -2231,6 +2603,41 @@ contains
 
   end subroutine resetFluxes
   
+!--> MK 240517   
+  !!
+  !! Calculate fission rate
+  !!
+  subroutine calculateFissionRate(self, cIdx, t)
+    class(dynamicRRPhysicsPackage_TI), target, intent(inout) :: self
+    integer(shortInt), intent(in)                         :: cIdx
+    integer(shortInt), intent(in)                         :: t
+    real(defFlt)                                          :: fRateTemp
+    real(defFlt), dimension(:), pointer                   :: fissionXS
+    integer(shortInt)                                     :: matIdx, gIn, baseIdx, matIdx2
+    real(defFlt), pointer, dimension(:)                   :: fluxVec
+
+    ! Identify material
+    matIdx  =  self % geom % geom % graph % getMatFromUID(cIdx) 
+    
+    ! Define indeces
+    matIdx2 = (matIdx - 1) * self % nG * self % nT + (t - 1) * self % nG
+    fissionXS => self % sigmaF((matIdx2 + 1) : (matIdx2 + self % nG)) 
+
+    baseIdx = self % ng * (cIdx - 1)
+    fluxVec => self % scalarFluxTD((baseIdx+1) : (baseIdx+self % nG))
+
+    fRateTemp = 0.0_defFlt
+    !$omp simd reduction(+:fRateTemp)                                 
+    do gIn = 1, self % nG                                         
+        fRateTemp = fRateTemp + fluxVec(gIn) * fissionXS(gIn)
+    end do
+ 
+    self % fissionRate(cIdx) = fRateTemp * real(self % volume(cIdx),defFlt)
+
+  end subroutine calculateFissionRate
+!<-- MK 240517   
+
+  
 !--> MK 240402  
   !!
   !! Updates quantities of previous timesteps that are needed for time derivatives
@@ -2269,8 +2676,12 @@ contains
 
         ! Update fission sources of previous time steps
         self % prevFissionTD_2(cIdx) = self % prevFissionTD_1(cIdx)
-        self % prevFissionTD_1(cIdx) = real(self % fissionScoreTD(cIdx),defFlt)
-        self % fissionScoreTD(cIdx) = ZERO
+!--> MK 240517
+         self % prevFissionTD_1(cIdx) = real(self % fissionScoreTD(cIdx),defFlt)
+         self % fissionScoreTD(cIdx) = ZERO
+         self % fissionRateScore(cIdx, 1) = ZERO       !TODO necessary?
+         self % fissionRateScore(cIdx, 2) = ZERO       !TODO necessary?
+!<-- MK 240517
 
         self % prevFission_2(cIdx) = self % prevFission_1(cIdx)
         self % prevFission_1(cIdx) = real(self % fissionScore(cIdx),defFlt)
@@ -2300,9 +2711,12 @@ contains
   subroutine accumulateFluxAndKeffScores(self, t)
     class(dynamicRRPhysicsPackage_TI), intent(inout) :: self
     integer(shortInt), intent(in)                 :: t
-    real(defReal), save                           :: flux
+!--> MK 240517
+!     real(defReal), save                           :: flux
+    real(defReal), save                           :: flux, source
+!<-- MK 240517
     integer(shortInt)                             :: idx
-    !$omp threadprivate(flux)
+    !$omp threadprivate(flux, source)
 
     !$omp parallel do schedule(static)
     do idx = 1, self % nCells * self % nG
@@ -2329,7 +2743,13 @@ contains
     !$omp parallel do schedule(static)
     do idx = 1, self % nCells
         ! Transient fission source scores
-        self % fissionScoreTD(idx) = self % fissionScoreTD(idx) + self % fissionSourceTD(idx)
+!--> MK 240517
+        source = real(self % fissionRate(idx), defReal) 
+        self % fissionRateScore(idx,1) = self % fissionRateScore(idx,1) + source
+        self % fissionRateScore(idx,2) = self % fissionRateScore(idx, 2) + source*source
+
+        self % fissionScoreTD(idx) = self % fissionScoreTD(idx) + real(self % fissionSourceTD(idx), defReal) 
+!<-- MK 240517
         
         ! Steady-state fission source scores
         self % fissionScore(idx) = self % fissionScore(idx) + self % fissionSource(idx)
@@ -2392,9 +2812,21 @@ contains
 
     !$omp parallel do schedule(static)
     do idx = 1, self % nCells
+!--> MK 240517
          ! Transient fission source scores
         self % fissionScoreTD(idx) = self % fissionScoreTD(idx) * N1
         
+        self % fissionRateScore(idx,1) = self % fissionRateScore(idx,1) * N1
+        self % fissionRateScore(idx,2) = self % fissionRateScore(idx,2) * N1
+        self % fissionRateScore(idx,2) = Nm1 *(self % fissionRateScore(idx,2) - &  
+                self % fissionRateScore(idx,1) * self % fissionRateScore(idx,1)) 
+        if (self % fissionRateScore(idx,2) <= ZERO) then
+            self % fissionRateScore(idx,2) = ZERO
+        else
+            self % fissionRateScore(idx,2) = sqrt(self % fissionRateScore(idx,2))
+        end if
+!<-- MK 240517
+
         ! Steady-state fission source scores
         self % fissionScore(idx) = self % fissionScore(idx) * N1
     end do
@@ -2440,11 +2872,11 @@ contains
     name = 'pop'
     call out % printValue(self % pop,name)
 
-    name = 'Inactive_Cycles'
-    call out % printValue(self % inactive,name)
-
-    name = 'Active_Cycles'
-    call out % printValue(self % active,name)
+!     name = 'Inactive_Cycles'
+!     call out % printValue(self % inactive,name)
+! 
+!     name = 'Active_Cycles'
+!     call out % printValue(self % active,name)
 
     call cpu_time(self % CPU_time_end)
     name = 'Total_CPU_Time'
@@ -2482,6 +2914,12 @@ contains
     ! Print cycles when converged
     name = 'Total_Cycles'
     call out % printValue(self % totalIt,name)
+    
+    name = 'Total_Active_Cycles'
+    call out % printValue(self % totalAct,name)
+    
+    name = 'Total_Inactive_Cycles'
+    call out % printValue(self % totalInact,name)
 !<-- MK 230718 
 
     ! Print cell volumes
@@ -2747,7 +3185,7 @@ contains
         ! Identify material
         matIdx =  self % geom % geom % graph % getMatFromUID(cIdx) 
         matPtr => self % mgData % getMaterial(matIdx)
-        mat    => baseMgNeutronMaterial_CptrCast(matPtr)
+        mat    => baseMgNeutronMaterial_CptrCast(matPtr)    !TODO is mat necessary?
         vol    =  self % volume(cIdx)
 
         if (vol < volume_tolerance) cycle
@@ -2757,29 +3195,37 @@ contains
         i = self % resultsMap % map(s)
 
         if ((i > 0) .AND. (matIdx /= 8)) then                               !TODO matIdx /= 7 for C5G7-TD3, matIdx /= 8 for C5G7-TD1
-          do g = 1, self % nG
-            matIdx0 = (matIdx - 1) * self % nG * self % nT + (t - 1) * self % nG + g    !TODO This works but should be checked again in the future
-            if (self % nuSigmaF(matIdx0) /= 0.0_defFlt) then
-                SigmaF = self % nuSigmaF(matIdx0) / self % nu(self % nG * (matIdx - 1) + g)
-            else
-                SigmaF = ZERO
-            end if
-   
-            idx = self % nG * (cIdx - 1) + g 
-            fiss(i) = fiss(i) + vol * self % fluxScoresTD(idx,1) * SigmaF
-            ! Is this correct? Also neglects uncertainty in volume - assumed small. Covariance neglected
-            fissSTD(i) = fissSTD(i) + &
-                   vol * vol * self % fluxScoresTD(idx,2)*self % fluxScoresTD(idx,2) * SigmaF * SigmaF
-          end do
+!--> MK 240517
+!           do g = 1, self % nG
+!             matIdx0 = (matIdx - 1) * self % nG * self % nT + (t - 1) * self % nG + g    !TODO This works but should be checked again in the future
+!             if (self % nuSigmaF(matIdx0) /= 0.0_defFlt) then
+!                 SigmaF = self % nuSigmaF(matIdx0) / self % nu(self % nG * (matIdx - 1) + g)
+!             else
+!                 SigmaF = ZERO
+!             end if
+!    
+!             idx = self % nG * (cIdx - 1) + g 
+!             fiss(i) = fiss(i) + vol * self % fluxScoresTD(idx,1) * SigmaF
+!             ! Is this correct? Also neglects uncertainty in volume - assumed small. Covariance neglected
+!             fissSTD(i) = fissSTD(i) + &
+!                    vol * vol * self % fluxScoresTD(idx,2)*self % fluxScoresTD(idx,2) * SigmaF * SigmaF
+              fiss(i) = fiss(i) + self % fissionRateScore(cIdx,1)
+              fissSTD(i) = fissSTD(i) + self % fissionRateScore(cIdx,2) * self % fissionRateScore(cIdx,2)
+!               fiss(i) = vol * self % fissionRateScore(idx,1)
+!               fissSTD(i) = vol * vol * self % fissionRateScore(idx,2)
+!           end do
+!<-- MK 240517
         end if
 
     end do
     !$omp end parallel do
 
+!--> MK 240517
     do i = 1,size(fissSTD)
         fissSTD(i) = sqrt(fissSTD(i))
         if (fiss(i) > 0) fissSTD(i) = fissSTD(i) / fiss(i)
     end do
+!<-- MK 240517
 
     name = 'fissionRate'
     call out % startBlock(name)
@@ -2869,6 +3315,9 @@ contains
     if(allocated(self % sigmaT)) deallocate(self % sigmaT)
     if(allocated(self % sigmaS)) deallocate(self % sigmaS)
     if(allocated(self % nusigmaF)) deallocate(self % nuSigmaF)
+!--> MK 240517
+    if(allocated(self % sigmaF)) deallocate(self % sigmaF)
+!<-- MK 240517
     if(allocated(self % chi)) deallocate(self % chi)
     if(allocated(self % nu)) deallocate(self % nu)
 !--> MK 240403
@@ -2903,10 +3352,17 @@ contains
     self % tstp        = ZERO
     self % initVal     = ZERO
     self % totalIt     = 0
+    self % totalAct    = 0
+    self % totalInact  = 0
     self % nTOut       = 0
     self % reduceLines = .false.
     self % isotropic = .false.
 !<-- MK 230718
+!--> MK 240523   
+    self % AccVol = ZERO
+    self % sarePrec = ZERO
+    self % rmsPrec = ZERO
+!<-- MK 240523  
 
     ! Clean scores
     self % keff        = ZERO
@@ -2936,6 +3392,8 @@ contains
     if(allocated(self % prevFission_2)) deallocate(self % prevFission_2)
     if(allocated(self % fissionScore)) deallocate(self % fissionScore)
     if(allocated(self % fissionSource)) deallocate(self % fissionSource)
+    if(allocated(self % fissionRateScore)) deallocate(self % fissionRateScore)
+    if(allocated(self % fissionRate)) deallocate(self % fissionRate)
 !<-- MK 240403
     if(allocated(self % volume)) deallocate(self % volume)
     if(allocated(self % volumeTracks)) deallocate(self % volumeTracks)

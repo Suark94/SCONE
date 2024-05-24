@@ -157,16 +157,17 @@ contains
 !--> MK 230324
     xss % velocity         = self % data(VELOCITY, G)
 !<-- MK 230324
-!--> MK 240411
-    xss % nu               = self % data(NU, G)
-!<-- MK 240411
 
     if(self % isFissile()) then
       xss % fission        = self % data(FISSION_XS, G)
       xss % nuFission      = self % data(NU_FISSION, G)
+!--> MK 240411
+      xss % nu             = self % data(NU, G)
+!<-- MK 240411
     else
       xss % fission        = ZERO
       xss % nuFission      = ZERO
+      xss % nu             = ZERO
     end if
 
   end subroutine getMacroXSs_byG
@@ -412,7 +413,7 @@ contains
 !--> MK 230605
     ! Allocate space for data
     if(self % isFissile()) then
-      N = 6
+      N = 7
     else
       N = 4
     end if
