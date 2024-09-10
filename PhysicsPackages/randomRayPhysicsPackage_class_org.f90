@@ -191,10 +191,10 @@ module randomRayPhysicsPackage_class_org
 
     ! Results space
     real(defFlt)                               :: keff
-    real(defReal), public, dimension(2)                :: keffScore !TODO
+    real(defReal), dimension(2)                :: keffScore
     real(defFlt), dimension(:), allocatable    :: scalarFlux
     real(defFlt), dimension(:), allocatable    :: prevFlux
-    real(defReal), public, dimension(:,:), allocatable :: fluxScores    !TODO
+    real(defReal), dimension(:,:), allocatable :: fluxScores
     real(defFlt), dimension(:), allocatable    :: source
     real(defReal), dimension(:), allocatable   :: volume
     real(defReal), dimension(:), allocatable   :: volumeTracks
@@ -349,12 +349,12 @@ contains
     call self % rand % init(seed)
 
     ! Build Nuclear Data
-!     call ndReg_init(dict % getDictPtr("nuclearData")) !TODO
+    call ndReg_init(dict % getDictPtr("nuclearData"))
 
     ! Build geometry
     tempDict => dict % getDictPtr('geometry')
     geomName = 'randomRayGeom'     
-!     call new_geometry(tempDict, geomName) !TODO
+    call new_geometry(tempDict, geomName)
     self % geomIdx = gr_geomIdx(geomName)
     geom    => gr_geomPtr(self % geomIdx)
 
@@ -373,7 +373,7 @@ contains
             'Geometry graph type must be "extended" for random ray calculations.')
 
     ! Activatee nuclear data
-    !call ndReg_activate(P_NEUTRON_MG, nucData, self % geom % activeMats()) !TODO
+    call ndReg_activate(P_NEUTRON_MG, nucData, self % geom % activeMats())
 
     ! Ensure that nuclear data is multi-group
     db => ndReg_getNeutronMG()

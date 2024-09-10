@@ -5,7 +5,7 @@ active   950;
 inactive 1525;
 dead     12.56; 
 termination 628.12; 
-plot 0;
+//plot 1;
 cache 1;
 XSdata   mg; 
 dataType mg;
@@ -1031,13 +1031,13 @@ latCore
 }
 
 viz {
-//  bmp1 { 
-//    type bmp; 
-//    output material_yz; 
-//    what material; 
-//    centre (-21.42 0.0 0.0); 
-//    axis x; 
-//    res (2000 2000);  }
+  bmp1 { 
+    type bmp; 
+    output material_yz; 
+    what material; 
+    centre (-21.42 0.0 0.0); 
+    axis x; 
+    res (2000 2000);  }
 //  bmp2 { 
 //    type bmp; 
 //    output material_xy; 
@@ -1045,13 +1045,13 @@ viz {
 //    centre (0.0 0.0 31.0); 
 //    axis z; 
 //    res (2000 2000);  }
-//  bmp3 { 
-//    type bmp; 
-//    output ID_yz; 
-//    what uniqueID; 
-//    centre (-21.42 0.0 0.0); 
-//    axis x; 
-//    res (2000 2000);  }
+  bmp3 { 
+    type bmp; 
+    output ID_yz; 
+    what uniqueID; 
+    centre (-21.42 0.0 0.0); 
+    axis x; 
+    res (2000 2000);  }
 //  myVTK {
 //    type vtk;
 //    what uniqueID; 
@@ -1071,55 +1071,59 @@ nuclearData {
       
     water { 
       temp 300;
-      xsFile ../XS_C5G7/moder;
+      xsFile ../XS_C5G7_TD/moder;
       composition { } 
    }
 
     mox43 { 
        temp 300; 
-       xsFile ../XS_C5G7/MOX43;
+       xsFile ../XS_C5G7_TD/MOX43;
        composition {  }
    }
 	  
     mox7 { 
        temp 300; 
-       xsFile ../XS_C5G7/MOX7;
+       xsFile ../XS_C5G7_TD/MOX7;
        composition { }
     } 
 		
     mox87 { 
        temp 300; 
-       xsFile ../XS_C5G7/MOX87;
+       xsFile ../XS_C5G7_TD/MOX87;
        composition { }
     } 
 		
     UO2 {
        temp 300; 
-       xsFile ../XS_C5G7/UO2;
+       xsFile ../XS_C5G7_TD/UO2;
 	composition { }
     }
 
     // Fission chamber
     FC {
        temp 300; 
-       xsFile ../XS_C5G7/FC;
+       xsFile ../XS_C5G7_TD/FC;
 	composition { }
     }
     
     // Guide tube
     GT {
        temp 300; 
-       xsFile ../XS_C5G7/GT;
+       xsFile ../XS_C5G7_TD/GT;
 	composition { }
     }
 	   
     // Control rod
     CR {
        temp 300; 
-       xsFile ../XS_C5G7/CR;
+       xsFile ../XS_C5G7_TD/CR;
 	composition { }
     }
 }
 }
 
+//viz {
+//plotBMP { type bmp; centre (0 0 0);  axis x; res (1000 200); output C5G7_Z; what uniqueID; }
+//}
+  
 
