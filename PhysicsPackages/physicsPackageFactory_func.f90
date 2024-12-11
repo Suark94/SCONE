@@ -18,6 +18,8 @@ module physicsPackageFactory_func
   use randomRayPhysicsPackage_class_org,   only : randomRayPhysicsPackage
   use dynamicRRPhysicsPackage_class_TI,    only : dynamicRRPhysicsPackage_TI        !TODO
   use dynamicRRPhysicsPackage_class_TCR,   only : dynamicRRPhysicsPackage_TCR       !TODO
+  use dynamicRRPhysicsPackage_class_STC,   only : dynamicRRPhysicsPackage_STC       !TODO
+  use dynamicRRPhysicsPackage_class_CS,    only : dynamicRRPhysicsPackage_CS       !TODO
 
 !  use dynamPhysicsPackage_class, only : dynamPhysicsPackage
 
@@ -35,6 +37,8 @@ module physicsPackageFactory_func
                                                                              'randomRayPhysicsPackage      ',&
                                                                              'rayVolPhysicsPackage         ',&
                                                                              'dynamicRRPhysicsPackage_TI   ',&  !TODO
+                                                                             'dynamicRRPhysicsPackage_STC  ',&  !TODO
+                                                                             'dynamicRRPhysicsPackage_CS   ',&  !TODO
                                                                              'dynamicRRPhysicsPackage_TCR  ']  !TODO
 
   !!
@@ -108,6 +112,16 @@ contains
       case('dynamicRRPhysicsPackage_TCR')   !TODO
         ! Allocate and initialise
         allocate( dynamicRRPhysicsPackage_TCR :: new)
+        call new % init(dict)
+        
+      case('dynamicRRPhysicsPackage_STC')   !TODO
+        ! Allocate and initialise
+        allocate( dynamicRRPhysicsPackage_STC :: new)
+        call new % init(dict)
+        
+      case('dynamicRRPhysicsPackage_CS')   !TODO
+        ! Allocate and initialise
+        allocate( dynamicRRPhysicsPackage_CS :: new)
         call new % init(dict)
         
       case('rayVolPhysicsPackage')

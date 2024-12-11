@@ -11,14 +11,35 @@ cache 1;
 XSdata   mg; 
 dataType mg;
 outputFile slab_TI;
+window 200; //
 tstp 0.000005;      // time step size
 nT 200;             // number of time steps
 initVal 1;          // normalisation of steady state
 tOut 200;           // number of printed time steps
-isotropicDeriv 1;   // use fully isotropic approximation for time derivative
+isotropicDeriv 1;   // use isotropic approximation for entire flux time derivative
 //window 100;         // width of moving window
 //reduceLines 1;      // reduce printed output lines during run
+rmsPrec 1.1E-4; // convergence error for RMS critertion for inactive cycles
+sarePrec 2.2E-3; // stopping critertion for SARE precision for active cycles
 
+//transient {
+//    variation1 {
+//               type xsVariation;
+//                crosssection fission;
+//                material fuel;
+//                transientType {type step; magnitude 0.001; timeStart 1; }
+//    }
+//}
+
+//fissionMap {type multiMap;
+//            maps (xax);
+//            xax { type spaceMap; axis x; grid lin; min -50; max 50; N 1;}
+//}
+
+transient {
+    variation1 {crosssection fission; material fuel; transientType step; magnitude 0.001; timeStart 1; }
+    }
+     
 geometry {
     type geometryStd;
     boundary (0 0 1 1 1 1);

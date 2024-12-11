@@ -9,6 +9,8 @@ add_sources( ./physicsPackage_inter.f90
 	     ./randomRayPhysicsPackage_class_org.f90
 	     ./dynamicRRPhysicsPackage_class_TI.f90
 	     ./dynamicRRPhysicsPackage_class_TCR.f90
+         ./dynamicRRPhysicsPackage_class_STC.f90
+         ./dynamicRRPhysicsPackage_class_CS.f90
 	     ./transient_class.f90 # TODO
              )
              #./dynamPhysicsPackage_class.f90)

@@ -1,16 +1,32 @@
-type randomRayPhysicsPackage; 
+type dynamicRRPhysicsPackage_TI; 
 
-pop      35959;
-active   950; 
-inactive 1525;
-dead     12.56; 
-termination 628.12; 
-//plot 1;
+pop      40000; //80074;
+active   1000; 
+inactive 1000;
+window 400; //600;
+dead     13;
+termination 628;
+plot 0;
 cache 1;
+//printFlux 1;
 XSdata   mg; 
 dataType mg;
-outputFile C5G7_RoddedB_TRRM ;
+outputFile C5G7_TD45_TI;
+tstp 0.025;
+nT 10; //40; //1000;
+initVal 1;
+tOut 10; //40; //80;
+isotropicDeriv 1;   // use fully isotropic approximation for time derivative
+rmsPrec 1.9E-2; //2.8E-2; //1.1E-2; // convergence error for RMS critertion for inactive cycles
+sarePrec 3.5E-3; //2.3E-3; // stopping critertion for SARE precision for active cycles
 
+transient { }
+
+fissionMap {type multiMap;
+            maps (xax yax);
+            xax { type spaceMap; axis x; grid lin; min -32.13; max 10.71; N 34;}
+            yax { type spaceMap; axis y; grid lin; min -10.71; max 32.13; N 34;}
+}
                    
 geometry { 
   type geometryStd; 
@@ -26,89 +42,89 @@ geometry {
   
   universes { 
     	root { id 1000; type rootUniverse; border 3; fill u<100>; }  
-    
+    	
     // Pin universes 
-    pin1 { id 1; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0 ); rotation (22.5 0 0);  fills (UO2 UO2 UO2 water);}
-    pin2 { id 2; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0 ); rotation (22.5 0 0);  fills (GT GT GT water);}
-    pin3 { id 3; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0 ); rotation (22.5 0 0);  fills (mox43 mox43 mox43 water);}
-    pin4 { id 4; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0 ); rotation (22.5 0 0);  fills (mox7 mox7 mox7 water);}    
-    pin5 { id 5; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0 ); rotation (22.5 0 0);  fills (mox87 mox87 mox87 water);}           
-    pin6 { id 6; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0 ); rotation (22.5 0 0);  fills (FC FC FC water);}
-
+    pin1 { id 1; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0);  fills (UO2 UO2 UO2 UO2 UO2 water water water);}
+    pin2 { id 2; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0);  fills (GT GT GT GT GT water water water);}
+    pin3 { id 3; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0);  fills (mox43 mox43 mox43 mox43 mox43 water water water);}
+    pin4 { id 4; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0);  fills (mox7 mox7 mox7 mox7 mox7 water water water);}    
+    pin5 { id 5; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0);  fills (mox87 mox87 mox87 mox87 mox87 water water water);}           
+    pin6 { id 6; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0);  fills (FC FC FC FC FC water water water);}
+    
     // Control rod
-    pin7 { id 7; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (CR CR CR water);}
+    pin7 { id 7; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (CR CR CR CR CR water water water);}
 
     // Time-dependent pins Bank 1
-    pin101 { id 101; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod101 rod101 rod101 water);}
-    pin102 { id 102; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod102 rod102 rod102 water);}
-    pin103 { id 103; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod103 rod103 rod103 water);}
-    pin104 { id 104; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod104 rod104 rod104 water);}
-    pin105 { id 105; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod105 rod105 rod105 water);}
-    pin106 { id 106; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod106 rod106 rod106 water);}
-    pin107 { id 107; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod107 rod107 rod107 water);}
-    pin108 { id 108; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod108 rod108 rod108 water);}
-    pin109 { id 109; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod109 rod109 rod109 water);}
-    pin110 { id 110; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod110 rod110 rod110 water);}
-    pin111 { id 111; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod111 rod111 rod111 water);}
-    pin112 { id 112; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod112 rod112 rod112 water);}
-    pin113 { id 113; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod113 rod113 rod113 water);}
-    pin114 { id 114; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod114 rod114 rod114 water);}
-    pin115 { id 115; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod115 rod115 rod115 water);}
-    pin116 { id 116; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod116 rod116 rod116 water);}
-    pin117 { id 117; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod117 rod117 rod117 water);}
-    pin118 { id 118; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod118 rod118 rod118 water);}
-    pin119 { id 119; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod119 rod119 rod119 water);}
-    pin120 { id 120; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod120 rod120 rod120 water);}
-    pin121 { id 121; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod121 rod121 rod121 water);}
-    pin122 { id 122; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod122 rod122 rod122 water);}
-    pin123 { id 123; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod123 rod123 rod123 water);}
-    pin124 { id 124; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod124 rod124 rod124 water);}
-    pin125 { id 125; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod125 rod125 rod125 water);}
-    pin126 { id 126; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod126 rod126 rod126 water);}
-    pin127 { id 127; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod127 rod127 rod127 water);}
-    pin128 { id 128; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod128 rod128 rod128 water);}
-    pin129 { id 129; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod129 rod129 rod129 water);}
-    pin130 { id 130; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod130 rod130 rod130 water);}
-    pin131 { id 131; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod131 rod131 rod131 water);}
-    pin132 { id 132; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod132 rod132 rod132 water);}
-    pin133 { id 133; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod133 rod133 rod133 water);}
-    pin134 { id 134; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod134 rod134 rod134 water);}
+    pin101 { id 1001; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod101 rod101 rod101 rod101 rod101 water water water);}
+    pin102 { id 1002; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod102 rod102 rod102 rod102 rod102 water water water);}
+    pin103 { id 1003; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod103 rod103 rod103 rod103 rod103 water water water);}
+    pin104 { id 1004; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod104 rod104 rod104 rod104 rod104 water water water);}
+    pin105 { id 1005; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod105 rod105 rod105 rod105 rod105 water water water);}
+    pin106 { id 1006; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod106 rod106 rod106 rod106 rod106 water water water);}
+    pin107 { id 1007; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod107 rod107 rod107 rod107 rod107 water water water);}
+    pin108 { id 1008; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod108 rod108 rod108 rod108 rod108 water water water);}
+    pin109 { id 1009; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod109 rod109 rod109 rod109 rod109 water water water);}
+    pin110 { id 1010; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod110 rod110 rod110 rod110 rod110 water water water);}
+    pin111 { id 1011; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod111 rod111 rod111 rod111 rod111 water water water);}
+    pin112 { id 1012; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod112 rod112 rod112 rod112 rod112 water water water);}
+    pin113 { id 1013; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod113 rod113 rod113 rod113 rod113 water water water);}
+    pin114 { id 1014; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod114 rod114 rod114 rod114 rod114 water water water);}
+    pin115 { id 1015; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod115 rod115 rod115 rod115 rod115 water water water);}
+    pin116 { id 1016; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod116 rod116 rod116 rod116 rod116 water water water);}
+    pin117 { id 1017; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod117 rod117 rod117 rod117 rod117 water water water);}
+    pin118 { id 1018; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod118 rod118 rod118 rod118 rod118 water water water);}
+    pin119 { id 1019; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod119 rod119 rod119 rod119 rod119 water water water);}
+    pin120 { id 1020; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod120 rod120 rod120 rod120 rod120 water water water);}
+    pin121 { id 1021; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod121 rod121 rod121 rod121 rod121 water water water);}
+    pin122 { id 1022; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod122 rod122 rod122 rod122 rod122 water water water);}
+    pin123 { id 1023; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod123 rod123 rod123 rod123 rod123 water water water);}
+    pin124 { id 1024; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod124 rod124 rod124 rod124 rod124 water water water);}
+    pin125 { id 1025; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod125 rod125 rod125 rod125 rod125 water water water);}
+    pin126 { id 1026; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod126 rod126 rod126 rod126 rod126 water water water);}
+    pin127 { id 1027; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod127 rod127 rod127 rod127 rod127 water water water);}
+    pin128 { id 1028; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod128 rod128 rod128 rod128 rod128 water water water);}
+    pin129 { id 1029; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod129 rod129 rod129 rod129 rod129 water water water);}
+    pin130 { id 1030; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod130 rod130 rod130 rod130 rod130 water water water);}
+    pin131 { id 1031; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod131 rod131 rod131 rod131 rod131 water water water);}
+    pin132 { id 1032; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod132 rod132 rod132 rod132 rod132 water water water);}
+    pin133 { id 1033; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod133 rod133 rod133 rod133 rod133 water water water);}
+    pin134 { id 1034; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod134 rod134 rod134 rod134 rod134 water water water);}
     
     // Time-dependent pins Bank 3
-    pin201 { id 201; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod201 rod201 rod201 water);}
-    pin202 { id 202; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod202 rod202 rod202 water);}
-    pin203 { id 203; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod203 rod203 rod203 water);}
-    pin204 { id 204; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod204 rod204 rod204 water);}
-    pin205 { id 205; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod205 rod205 rod205 water);}
-    pin206 { id 206; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod206 rod206 rod206 water);}
-    pin207 { id 207; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod207 rod207 rod207 water);}
-    pin208 { id 208; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod208 rod208 rod208 water);}
-    pin209 { id 209; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod209 rod209 rod209 water);}
-    pin210 { id 210; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod210 rod210 rod210 water);}
-    pin211 { id 211; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod211 rod211 rod211 water);}
-    pin212 { id 212; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod212 rod212 rod212 water);}
-    pin213 { id 213; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod213 rod213 rod213 water);}
-    pin214 { id 214; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod214 rod214 rod214 water);}
-    pin215 { id 215; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod215 rod215 rod215 water);}
-    pin216 { id 216; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod216 rod216 rod216 water);}
-    pin217 { id 217; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod217 rod217 rod217 water);}
-    pin218 { id 218; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod218 rod218 rod218 water);}
-    pin219 { id 219; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod219 rod219 rod219 water);}
-    pin220 { id 220; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod220 rod220 rod220 water);}
-    pin221 { id 221; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod221 rod221 rod221 water);}
-    pin222 { id 222; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod222 rod222 rod222 water);}
-    pin223 { id 223; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod223 rod223 rod223 water);}
-    pin224 { id 224; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod224 rod224 rod224 water);}
-    pin225 { id 225; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod225 rod225 rod225 water);}
-    pin226 { id 226; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod226 rod226 rod226 water);}
-    pin227 { id 227; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod227 rod227 rod227 water);}
-    pin228 { id 228; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod228 rod228 rod228 water);}
-    pin229 { id 229; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod229 rod229 rod229 water);}
-    pin230 { id 230; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod230 rod230 rod230 water);}
-    pin231 { id 231; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod231 rod231 rod231 water);}
-    pin232 { id 232; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod232 rod232 rod232 water);}
-    pin233 { id 233; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod233 rod233 rod233 water);}
-    pin234 { id 234; type azimPinUniverse; naz 8; radii (0.311769 0.440908 0.5400 0.0); rotation (22.5 0 0); fills (rod234 rod234 rod234 water);}
+    pin201 { id 2001; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod201 rod201 rod201 rod201 rod201 water water water);}
+    pin202 { id 2002; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod202 rod202 rod202 rod202 rod202 water water water);}
+    pin203 { id 2003; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod203 rod203 rod203 rod203 rod203 water water water);}
+    pin204 { id 2004; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod204 rod204 rod204 rod204 rod204 water water water);}
+    pin205 { id 2005; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod205 rod205 rod205 rod205 rod205 water water water);}
+    pin206 { id 2006; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod206 rod206 rod206 rod206 rod206 water water water);}
+    pin207 { id 2007; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod207 rod207 rod207 rod207 rod207 water water water);}
+    pin208 { id 2008; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod208 rod208 rod208 rod208 rod208 water water water);}
+    pin209 { id 2009; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod209 rod209 rod209 rod209 rod209 water water water);}
+    pin210 { id 2010; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod210 rod210 rod210 rod210 rod210 water water water);}
+    pin211 { id 2011; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod211 rod211 rod211 rod211 rod211 water water water);}
+    pin212 { id 2012; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod212 rod212 rod212 rod212 rod212 water water water);}
+    pin213 { id 2013; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod213 rod213 rod213 rod213 rod213 water water water);}
+    pin214 { id 2014; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod214 rod214 rod214 rod214 rod214 water water water);}
+    pin215 { id 2015; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod215 rod215 rod215 rod215 rod215 water water water);}
+    pin216 { id 2016; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod216 rod216 rod216 rod216 rod216 water water water);}
+    pin217 { id 2017; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod217 rod217 rod217 rod217 rod217 water water water);}
+    pin218 { id 2018; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod218 rod218 rod218 rod218 rod218 water water water);}
+    pin219 { id 2019; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod219 rod219 rod219 rod219 rod219 water water water);}
+    pin220 { id 2020; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod220 rod220 rod220 rod220 rod220 water water water);}
+    pin221 { id 2021; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod221 rod221 rod221 rod221 rod221 water water water);}
+    pin222 { id 2022; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod222 rod222 rod222 rod222 rod222 water water water);}
+    pin223 { id 2023; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod223 rod223 rod223 rod223 rod223 water water water);}
+    pin224 { id 2024; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod224 rod224 rod224 rod224 rod224 water water water);}
+    pin225 { id 2025; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod225 rod225 rod225 rod225 rod225 water water water);}
+    pin226 { id 2026; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod226 rod226 rod226 rod226 rod226 water water water);}
+    pin227 { id 2027; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod227 rod227 rod227 rod227 rod227 water water water);}
+    pin228 { id 2028; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod228 rod228 rod228 rod228 rod228 water water water);}
+    pin229 { id 2029; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod229 rod229 rod229 rod229 rod229 water water water);}
+    pin230 { id 2030; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod230 rod230 rod230 rod230 rod230 water water water);}
+    pin231 { id 2031; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod231 rod231 rod231 rod231 rod231 water water water);}
+    pin232 { id 2032; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod232 rod232 rod232 rod232 rod232 water water water);}
+    pin233 { id 2033; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod233 rod233 rod233 rod233 rod233 water water water);}
+    pin234 { id 2034; type azimPinUniverse; naz 8; radii (0.241495 0.341526 0.418282 0.482991 0.5400 0.581378 0.62 0.0 ); rotation (22.5 0 0); fills (rod234 rod234 rod234 rod234 rod234 water water water);}
 
     
     // Infinite moderator
@@ -265,12 +281,12 @@ map (
 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
 );
 }
 
@@ -283,23 +299,23 @@ pitch (1.26 1.26 0.0);
 shape (17 17 0);
 padMat water;
 map (
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
 );
 }
 
@@ -312,23 +328,23 @@ pitch (1.26 1.26 0.0);
 shape (17 17 0);
 padMat water;
 map (
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-40 40 40 40 40 40 40 40 40 40 40 30 30 30 30 30 30 
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 
-30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 30 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
+40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 40 
 );
 }
 
@@ -401,19 +417,19 @@ latUO2_101{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 101 1 1 101 1 1 101 1 1   1   1 1 
- 1 1 1   101 1 1   1 1 1   1 1 1   1 101 1   1 1 
+ 1 1 1   1   1 1001 1 1 1001 1 1 1001 1 1   1   1 1 
+ 1 1 1   1001 1 1   1 1 1   1 1 1   1 1001 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 101 1   1 101 1 1 101 1 1 101 1 1   101 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 101 1   1 101 1 1 6   1 1 101 1 1   101 1 1 
+ 1 1 1001 1   1 1001 1 1 1001 1 1 1001 1 1   1001 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 101 1   1 101 1 1 101 1 1 101 1 1   101 1 1 
+ 1 1 1001 1   1 1001 1 1 6   1 1 1001 1 1   1001 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   101 1 1   1 1 1   1 1 1   1 101 1   1 1 
- 1 1 1   1   1 101 1 1 101 1 1 101 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1001 1   1 1001 1 1 1001 1 1 1001 1 1   1001 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1001 1 1   1 1 1   1 1 1   1 1001 1   1 1 
+ 1 1 1   1   1 1001 1 1 1001 1 1 1001 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -430,19 +446,19 @@ latUO2_102{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 102 1 1 102 1 1 102 1 1   1   1 1 
- 1 1 1   102 1 1   1 1 1   1 1 1   1 102 1   1 1 
+ 1 1 1   1   1 1002 1 1 1002 1 1 1002 1 1   1   1 1 
+ 1 1 1   1002 1 1   1 1 1   1 1 1   1 1002 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 102 1   1 102 1 1 102 1 1 102 1 1   102 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 102 1   1 102 1 1 6   1 1 102 1 1   102 1 1 
+ 1 1 1002 1   1 1002 1 1 1002 1 1 1002 1 1   1002 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 102 1   1 102 1 1 102 1 1 102 1 1   102 1 1 
+ 1 1 1002 1   1 1002 1 1 6   1 1 1002 1 1   1002 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   102 1 1   1 1 1   1 1 1   1 102 1   1 1 
- 1 1 1   1   1 102 1 1 102 1 1 102 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1002 1   1 1002 1 1 1002 1 1 1002 1 1   1002 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1002 1 1   1 1 1   1 1 1   1 1002 1   1 1 
+ 1 1 1   1   1 1002 1 1 1002 1 1 1002 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -459,19 +475,19 @@ latUO2_103{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 103 1 1 103 1 1 103 1 1   1   1 1 
- 1 1 1   103 1 1   1 1 1   1 1 1   1 103 1   1 1 
+ 1 1 1   1   1 1003 1 1 1003 1 1 1003 1 1   1   1 1 
+ 1 1 1   1003 1 1   1 1 1   1 1 1   1 1003 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 103 1   1 103 1 1 103 1 1 103 1 1   103 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 103 1   1 103 1 1 6   1 1 103 1 1   103 1 1 
+ 1 1 1003 1   1 1003 1 1 1003 1 1 1003 1 1   1003 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 103 1   1 103 1 1 103 1 1 103 1 1   103 1 1 
+ 1 1 1003 1   1 1003 1 1 6   1 1 1003 1 1   1003 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   103 1 1   1 1 1   1 1 1   1 103 1   1 1 
- 1 1 1   1   1 103 1 1 103 1 1 103 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1003 1   1 1003 1 1 1003 1 1 1003 1 1   1003 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1003 1 1   1 1 1   1 1 1   1 1003 1   1 1 
+ 1 1 1   1   1 1003 1 1 1003 1 1 1003 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -488,19 +504,19 @@ latUO2_104{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 104 1 1 104 1 1 104 1 1   1   1 1 
- 1 1 1   104 1 1   1 1 1   1 1 1   1 104 1   1 1 
+ 1 1 1   1   1 1004 1 1 1004 1 1 1004 1 1   1   1 1 
+ 1 1 1   1004 1 1   1 1 1   1 1 1   1 1004 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 104 1   1 104 1 1 104 1 1 104 1 1   104 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 104 1   1 104 1 1 6   1 1 104 1 1   104 1 1 
+ 1 1 1004 1   1 1004 1 1 1004 1 1 1004 1 1   1004 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 104 1   1 104 1 1 104 1 1 104 1 1   104 1 1 
+ 1 1 1004 1   1 1004 1 1 6   1 1 1004 1 1   1004 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   104 1 1   1 1 1   1 1 1   1 104 1   1 1 
- 1 1 1   1   1 104 1 1 104 1 1 104 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1004 1   1 1004 1 1 1004 1 1 1004 1 1   1004 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1004 1 1   1 1 1   1 1 1   1 1004 1   1 1 
+ 1 1 1   1   1 1004 1 1 1004 1 1 1004 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -517,19 +533,19 @@ latUO2_105{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 105 1 1 105 1 1 105 1 1   1   1 1 
- 1 1 1   105 1 1   1 1 1   1 1 1   1 105 1   1 1 
+ 1 1 1   1   1 1005 1 1 1005 1 1 1005 1 1   1   1 1 
+ 1 1 1   1005 1 1   1 1 1   1 1 1   1 1005 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 105 1   1 105 1 1 105 1 1 105 1 1   105 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 105 1   1 105 1 1 6   1 1 105 1 1   105 1 1 
+ 1 1 1005 1   1 1005 1 1 1005 1 1 1005 1 1   1005 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 105 1   1 105 1 1 105 1 1 105 1 1   105 1 1 
+ 1 1 1005 1   1 1005 1 1 6   1 1 1005 1 1   1005 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   105 1 1   1 1 1   1 1 1   1 105 1   1 1 
- 1 1 1   1   1 105 1 1 105 1 1 105 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1005 1   1 1005 1 1 1005 1 1 1005 1 1   1005 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1005 1 1   1 1 1   1 1 1   1 1005 1   1 1 
+ 1 1 1   1   1 1005 1 1 1005 1 1 1005 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -545,19 +561,19 @@ latUO2_106{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 106 1 1 106 1 1 106 1 1   1   1 1 
- 1 1 1   106 1 1   1 1 1   1 1 1   1 106 1   1 1 
+ 1 1 1   1   1 1006 1 1 1006 1 1 1006 1 1   1   1 1 
+ 1 1 1   1006 1 1   1 1 1   1 1 1   1 1006 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 106 1   1 106 1 1 106 1 1 106 1 1   106 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 106 1   1 106 1 1 6   1 1 106 1 1   106 1 1 
+ 1 1 1006 1   1 1006 1 1 1006 1 1 1006 1 1   1006 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 106 1   1 106 1 1 106 1 1 106 1 1   106 1 1 
+ 1 1 1006 1   1 1006 1 1 6   1 1 1006 1 1   1006 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   106 1 1   1 1 1   1 1 1   1 106 1   1 1 
- 1 1 1   1   1 106 1 1 106 1 1 106 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1006 1   1 1006 1 1 1006 1 1 1006 1 1   1006 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1006 1 1   1 1 1   1 1 1   1 1006 1   1 1 
+ 1 1 1   1   1 1006 1 1 1006 1 1 1006 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -574,19 +590,19 @@ latUO2_107{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 107 1 1 107 1 1 107 1 1   1   1 1 
- 1 1 1   107 1 1   1 1 1   1 1 1   1 107 1   1 1 
+ 1 1 1   1   1 1007 1 1 1007 1 1 1007 1 1   1   1 1 
+ 1 1 1   1007 1 1   1 1 1   1 1 1   1 1007 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 107 1   1 107 1 1 107 1 1 107 1 1   107 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 107 1   1 107 1 1 6   1 1 107 1 1   107 1 1 
+ 1 1 1007 1   1 1007 1 1 1007 1 1 1007 1 1   1007 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 107 1   1 107 1 1 107 1 1 107 1 1   107 1 1 
+ 1 1 1007 1   1 1007 1 1 6   1 1 1007 1 1   1007 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   107 1 1   1 1 1   1 1 1   1 107 1   1 1 
- 1 1 1   1   1 107 1 1 107 1 1 107 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1007 1   1 1007 1 1 1007 1 1 1007 1 1   1007 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1007 1 1   1 1 1   1 1 1   1 1007 1   1 1 
+ 1 1 1   1   1 1007 1 1 1007 1 1 1007 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -603,19 +619,19 @@ latUO2_108{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 108 1 1 108 1 1 108 1 1   1   1 1 
- 1 1 1   108 1 1   1 1 1   1 1 1   1 108 1   1 1 
+ 1 1 1   1   1 1008 1 1 1008 1 1 1008 1 1   1   1 1 
+ 1 1 1   1008 1 1   1 1 1   1 1 1   1 1008 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 108 1   1 108 1 1 108 1 1 108 1 1   108 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 108 1   1 108 1 1 6   1 1 108 1 1   108 1 1 
+ 1 1 1008 1   1 1008 1 1 1008 1 1 1008 1 1   1008 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 108 1   1 108 1 1 108 1 1 108 1 1   108 1 1 
+ 1 1 1008 1   1 1008 1 1 6   1 1 1008 1 1   1008 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   108 1 1   1 1 1   1 1 1   1 108 1   1 1 
- 1 1 1   1   1 108 1 1 108 1 1 108 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1008 1   1 1008 1 1 1008 1 1 1008 1 1   1008 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1008 1 1   1 1 1   1 1 1   1 1008 1   1 1 
+ 1 1 1   1   1 1008 1 1 1008 1 1 1008 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -632,19 +648,19 @@ latUO2_109{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 109 1 1 109 1 1 109 1 1   1   1 1 
- 1 1 1   109 1 1   1 1 1   1 1 1   1 109 1   1 1 
+ 1 1 1   1   1 1009 1 1 1009 1 1 1009 1 1   1   1 1 
+ 1 1 1   1009 1 1   1 1 1   1 1 1   1 1009 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 109 1   1 109 1 1 109 1 1 109 1 1   109 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 109 1   1 109 1 1 6   1 1 109 1 1   109 1 1 
+ 1 1 1009 1   1 1009 1 1 1009 1 1 1009 1 1   1009 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 109 1   1 109 1 1 109 1 1 109 1 1   109 1 1 
+ 1 1 1009 1   1 1009 1 1 6   1 1 1009 1 1   1009 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   109 1 1   1 1 1   1 1 1   1 109 1   1 1 
- 1 1 1   1   1 109 1 1 109 1 1 109 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1009 1   1 1009 1 1 1009 1 1 1009 1 1   1009 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1009 1 1   1 1 1   1 1 1   1 1009 1   1 1 
+ 1 1 1   1   1 1009 1 1 1009 1 1 1009 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -661,19 +677,19 @@ latUO2_110{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 110 1 1 110 1 1 110 1 1   1   1 1 
- 1 1 1   110 1 1   1 1 1   1 1 1   1 110 1   1 1 
+ 1 1 1   1   1 1010 1 1 1010 1 1 1010 1 1   1   1 1 
+ 1 1 1   1010 1 1   1 1 1   1 1 1   1 1010 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 110 1   1 110 1 1 110 1 1 110 1 1   110 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 110 1   1 110 1 1 6   1 1 110 1 1   110 1 1 
+ 1 1 1010 1   1 1010 1 1 1010 1 1 1010 1 1   1010 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 110 1   1 110 1 1 110 1 1 110 1 1   110 1 1 
+ 1 1 1010 1   1 1010 1 1 6   1 1 1010 1 1   1010 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   110 1 1   1 1 1   1 1 1   1 110 1   1 1 
- 1 1 1   1   1 110 1 1 110 1 1 110 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1010 1   1 1010 1 1 1010 1 1 1010 1 1   1010 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1010 1 1   1 1 1   1 1 1   1 1010 1   1 1 
+ 1 1 1   1   1 1010 1 1 1010 1 1 1010 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -689,19 +705,19 @@ latUO2_111{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 111 1 1 111 1 1 111 1 1   1   1 1 
- 1 1 1   111 1 1   1 1 1   1 1 1   1 111 1   1 1 
+ 1 1 1   1   1 1011 1 1 1011 1 1 1011 1 1   1   1 1 
+ 1 1 1   1011 1 1   1 1 1   1 1 1   1 1011 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 111 1   1 111 1 1 111 1 1 111 1 1   111 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 111 1   1 111 1 1 6   1 1 111 1 1   111 1 1 
+ 1 1 1011 1   1 1011 1 1 1011 1 1 1011 1 1   1011 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 111 1   1 111 1 1 111 1 1 111 1 1   111 1 1 
+ 1 1 1011 1   1 1011 1 1 6   1 1 1011 1 1   1011 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   111 1 1   1 1 1   1 1 1   1 111 1   1 1 
- 1 1 1   1   1 111 1 1 111 1 1 111 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1011 1   1 1011 1 1 1011 1 1 1011 1 1   1011 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1011 1 1   1 1 1   1 1 1   1 1011 1   1 1 
+ 1 1 1   1   1 1011 1 1 1011 1 1 1011 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -718,19 +734,19 @@ latUO2_112{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 112 1 1 112 1 1 112 1 1   1   1 1 
- 1 1 1   112 1 1   1 1 1   1 1 1   1 112 1   1 1 
+ 1 1 1   1   1 1012 1 1 1012 1 1 1012 1 1   1   1 1 
+ 1 1 1   1012 1 1   1 1 1   1 1 1   1 1012 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 112 1   1 112 1 1 112 1 1 112 1 1   112 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 112 1   1 112 1 1 6   1 1 112 1 1   112 1 1 
+ 1 1 1012 1   1 1012 1 1 1012 1 1 1012 1 1   1012 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 112 1   1 112 1 1 112 1 1 112 1 1   112 1 1 
+ 1 1 1012 1   1 1012 1 1 6   1 1 1012 1 1   1012 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   112 1 1   1 1 1   1 1 1   1 112 1   1 1 
- 1 1 1   1   1 112 1 1 112 1 1 112 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1012 1   1 1012 1 1 1012 1 1 1012 1 1   1012 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1012 1 1   1 1 1   1 1 1   1 1012 1   1 1 
+ 1 1 1   1   1 1012 1 1 1012 1 1 1012 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -747,19 +763,19 @@ latUO2_113{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 113 1 1 113 1 1 113 1 1   1   1 1 
- 1 1 1   113 1 1   1 1 1   1 1 1   1 113 1   1 1 
+ 1 1 1   1   1 1013 1 1 1013 1 1 1013 1 1   1   1 1 
+ 1 1 1   1013 1 1   1 1 1   1 1 1   1 1013 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 113 1   1 113 1 1 113 1 1 113 1 1   113 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 113 1   1 113 1 1 6   1 1 113 1 1   113 1 1 
+ 1 1 1013 1   1 1013 1 1 1013 1 1 1013 1 1   1013 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 113 1   1 113 1 1 113 1 1 113 1 1   113 1 1 
+ 1 1 1013 1   1 1013 1 1 6   1 1 1013 1 1   1013 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   113 1 1   1 1 1   1 1 1   1 113 1   1 1 
- 1 1 1   1   1 113 1 1 113 1 1 113 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1013 1   1 1013 1 1 1013 1 1 1013 1 1   1013 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1013 1 1   1 1 1   1 1 1   1 1013 1   1 1 
+ 1 1 1   1   1 1013 1 1 1013 1 1 1013 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -776,19 +792,19 @@ latUO2_114{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 114 1 1 114 1 1 114 1 1   1   1 1 
- 1 1 1   114 1 1   1 1 1   1 1 1   1 114 1   1 1 
+ 1 1 1   1   1 1014 1 1 1014 1 1 1014 1 1   1   1 1 
+ 1 1 1   1014 1 1   1 1 1   1 1 1   1 1014 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 114 1   1 114 1 1 114 1 1 114 1 1   114 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 114 1   1 114 1 1 6   1 1 114 1 1   114 1 1 
+ 1 1 1014 1   1 1014 1 1 1014 1 1 1014 1 1   1014 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 114 1   1 114 1 1 114 1 1 114 1 1   114 1 1 
+ 1 1 1014 1   1 1014 1 1 6   1 1 1014 1 1   1014 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   114 1 1   1 1 1   1 1 1   1 114 1   1 1 
- 1 1 1   1   1 114 1 1 114 1 1 114 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1014 1   1 1014 1 1 1014 1 1 1014 1 1   1014 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1014 1 1   1 1 1   1 1 1   1 1014 1   1 1 
+ 1 1 1   1   1 1014 1 1 1014 1 1 1014 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -805,19 +821,19 @@ latUO2_115{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 115 1 1 115 1 1 115 1 1   1   1 1 
- 1 1 1   115 1 1   1 1 1   1 1 1   1 115 1   1 1 
+ 1 1 1   1   1 1015 1 1 1015 1 1 1015 1 1   1   1 1 
+ 1 1 1   1015 1 1   1 1 1   1 1 1   1 1015 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 115 1   1 115 1 1 115 1 1 115 1 1   115 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 115 1   1 115 1 1 6   1 1 115 1 1   115 1 1 
+ 1 1 1015 1   1 1015 1 1 1015 1 1 1015 1 1   1015 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 115 1   1 115 1 1 115 1 1 115 1 1   115 1 1 
+ 1 1 1015 1   1 1015 1 1 6   1 1 1015 1 1   1015 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   115 1 1   1 1 1   1 1 1   1 115 1   1 1 
- 1 1 1   1   1 115 1 1 115 1 1 115 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1015 1   1 1015 1 1 1015 1 1 1015 1 1   1015 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1015 1 1   1 1 1   1 1 1   1 1015 1   1 1 
+ 1 1 1   1   1 1015 1 1 1015 1 1 1015 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -833,19 +849,19 @@ latUO2_116{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 116 1 1 116 1 1 116 1 1   1   1 1 
- 1 1 1   116 1 1   1 1 1   1 1 1   1 116 1   1 1 
+ 1 1 1   1   1 1016 1 1 1016 1 1 1016 1 1   1   1 1 
+ 1 1 1   1016 1 1   1 1 1   1 1 1   1 1016 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 116 1   1 116 1 1 116 1 1 116 1 1   116 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 116 1   1 116 1 1 6   1 1 116 1 1   116 1 1 
+ 1 1 1016 1   1 1016 1 1 1016 1 1 1016 1 1   1016 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 116 1   1 116 1 1 116 1 1 116 1 1   116 1 1 
+ 1 1 1016 1   1 1016 1 1 6   1 1 1016 1 1   1016 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   116 1 1   1 1 1   1 1 1   1 116 1   1 1 
- 1 1 1   1   1 116 1 1 116 1 1 116 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1016 1   1 1016 1 1 1016 1 1 1016 1 1   1016 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1016 1 1   1 1 1   1 1 1   1 1016 1   1 1 
+ 1 1 1   1   1 1016 1 1 1016 1 1 1016 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -862,19 +878,19 @@ latUO2_117{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 117 1 1 117 1 1 117 1 1   1   1 1 
- 1 1 1   117 1 1   1 1 1   1 1 1   1 117 1   1 1 
+ 1 1 1   1   1 1017 1 1 1017 1 1 1017 1 1   1   1 1 
+ 1 1 1   1017 1 1   1 1 1   1 1 1   1 1017 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 117 1   1 117 1 1 117 1 1 117 1 1   117 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 117 1   1 117 1 1 6   1 1 117 1 1   117 1 1 
+ 1 1 1017 1   1 1017 1 1 1017 1 1 1017 1 1   1017 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 117 1   1 117 1 1 117 1 1 117 1 1   117 1 1 
+ 1 1 1017 1   1 1017 1 1 6   1 1 1017 1 1   1017 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   117 1 1   1 1 1   1 1 1   1 117 1   1 1 
- 1 1 1   1   1 117 1 1 117 1 1 117 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1017 1   1 1017 1 1 1017 1 1 1017 1 1   1017 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1017 1 1   1 1 1   1 1 1   1 1017 1   1 1 
+ 1 1 1   1   1 1017 1 1 1017 1 1 1017 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -891,19 +907,19 @@ latUO2_118{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 118 1 1 118 1 1 118 1 1   1   1 1 
- 1 1 1   118 1 1   1 1 1   1 1 1   1 118 1   1 1 
+ 1 1 1   1   1 1018 1 1 1018 1 1 1018 1 1   1   1 1 
+ 1 1 1   1018 1 1   1 1 1   1 1 1   1 1018 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 118 1   1 118 1 1 118 1 1 118 1 1   118 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 118 1   1 118 1 1 6   1 1 118 1 1   118 1 1 
+ 1 1 1018 1   1 1018 1 1 1018 1 1 1018 1 1   1018 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 118 1   1 118 1 1 118 1 1 118 1 1   118 1 1 
+ 1 1 1018 1   1 1018 1 1 6   1 1 1018 1 1   1018 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   118 1 1   1 1 1   1 1 1   1 118 1   1 1 
- 1 1 1   1   1 118 1 1 118 1 1 118 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1018 1   1 1018 1 1 1018 1 1 1018 1 1   1018 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1018 1 1   1 1 1   1 1 1   1 1018 1   1 1 
+ 1 1 1   1   1 1018 1 1 1018 1 1 1018 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -920,19 +936,19 @@ latUO2_119{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 119 1 1 119 1 1 119 1 1   1   1 1 
- 1 1 1   119 1 1   1 1 1   1 1 1   1 119 1   1 1 
+ 1 1 1   1   1 1019 1 1 1019 1 1 1019 1 1   1   1 1 
+ 1 1 1   1019 1 1   1 1 1   1 1 1   1 1019 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 119 1   1 119 1 1 119 1 1 119 1 1   119 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 119 1   1 119 1 1 6   1 1 119 1 1   119 1 1 
+ 1 1 1019 1   1 1019 1 1 1019 1 1 1019 1 1   1019 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 119 1   1 119 1 1 119 1 1 119 1 1   119 1 1 
+ 1 1 1019 1   1 1019 1 1 6   1 1 1019 1 1   1019 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   119 1 1   1 1 1   1 1 1   1 119 1   1 1 
- 1 1 1   1   1 119 1 1 119 1 1 119 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1019 1   1 1019 1 1 1019 1 1 1019 1 1   1019 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1019 1 1   1 1 1   1 1 1   1 1019 1   1 1 
+ 1 1 1   1   1 1019 1 1 1019 1 1 1019 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -949,19 +965,19 @@ latUO2_120{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 120 1 1 120 1 1 120 1 1   1   1 1 
- 1 1 1   120 1 1   1 1 1   1 1 1   1 120 1   1 1 
+ 1 1 1   1   1 1020 1 1 1020 1 1 1020 1 1   1   1 1 
+ 1 1 1   1020 1 1   1 1 1   1 1 1   1 1020 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 120 1   1 120 1 1 120 1 1 120 1 1   120 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 120 1   1 120 1 1 6   1 1 120 1 1   120 1 1 
+ 1 1 1020 1   1 1020 1 1 1020 1 1 1020 1 1   1020 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 120 1   1 120 1 1 120 1 1 120 1 1   120 1 1 
+ 1 1 1020 1   1 1020 1 1 6   1 1 1020 1 1   1020 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   120 1 1   1 1 1   1 1 1   1 120 1   1 1 
- 1 1 1   1   1 120 1 1 120 1 1 120 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1020 1   1 1020 1 1 1020 1 1 1020 1 1   1020 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1020 1 1   1 1 1   1 1 1   1 1020 1   1 1 
+ 1 1 1   1   1 1020 1 1 1020 1 1 1020 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -977,19 +993,19 @@ latUO2_121{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 121 1 1 121 1 1 121 1 1   1   1 1 
- 1 1 1   121 1 1   1 1 1   1 1 1   1 121 1   1 1 
+ 1 1 1   1   1 1021 1 1 1021 1 1 1021 1 1   1   1 1 
+ 1 1 1   1021 1 1   1 1 1   1 1 1   1 1021 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 121 1   1 121 1 1 121 1 1 121 1 1   121 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 121 1   1 121 1 1 6   1 1 121 1 1   121 1 1 
+ 1 1 1021 1   1 1021 1 1 1021 1 1 1021 1 1   1021 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 121 1   1 121 1 1 121 1 1 121 1 1   121 1 1 
+ 1 1 1021 1   1 1021 1 1 6   1 1 1021 1 1   1021 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   121 1 1   1 1 1   1 1 1   1 121 1   1 1 
- 1 1 1   1   1 121 1 1 121 1 1 121 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1021 1   1 1021 1 1 1021 1 1 1021 1 1   1021 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1021 1 1   1 1 1   1 1 1   1 1021 1   1 1 
+ 1 1 1   1   1 1021 1 1 1021 1 1 1021 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1006,19 +1022,19 @@ latUO2_122{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 122 1 1 122 1 1 122 1 1   1   1 1 
- 1 1 1   122 1 1   1 1 1   1 1 1   1 122 1   1 1 
+ 1 1 1   1   1 1022 1 1 1022 1 1 1022 1 1   1   1 1 
+ 1 1 1   1022 1 1   1 1 1   1 1 1   1 1022 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 122 1   1 122 1 1 122 1 1 122 1 1   122 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 122 1   1 122 1 1 6   1 1 122 1 1   122 1 1 
+ 1 1 1022 1   1 1022 1 1 1022 1 1 1022 1 1   1022 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 122 1   1 122 1 1 122 1 1 122 1 1   122 1 1 
+ 1 1 1022 1   1 1022 1 1 6   1 1 1022 1 1   1022 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   122 1 1   1 1 1   1 1 1   1 122 1   1 1 
- 1 1 1   1   1 122 1 1 122 1 1 122 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1022 1   1 1022 1 1 1022 1 1 1022 1 1   1022 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1022 1 1   1 1 1   1 1 1   1 1022 1   1 1 
+ 1 1 1   1   1 1022 1 1 1022 1 1 1022 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1035,19 +1051,19 @@ latUO2_123{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 123 1 1 123 1 1 123 1 1   1   1 1 
- 1 1 1   123 1 1   1 1 1   1 1 1   1 123 1   1 1 
+ 1 1 1   1   1 1023 1 1 1023 1 1 1023 1 1   1   1 1 
+ 1 1 1   1023 1 1   1 1 1   1 1 1   1 1023 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 123 1   1 123 1 1 123 1 1 123 1 1   123 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 123 1   1 123 1 1 6   1 1 123 1 1   123 1 1 
+ 1 1 1023 1   1 1023 1 1 1023 1 1 1023 1 1   1023 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 123 1   1 123 1 1 123 1 1 123 1 1   123 1 1 
+ 1 1 1023 1   1 1023 1 1 6   1 1 1023 1 1   1023 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   123 1 1   1 1 1   1 1 1   1 123 1   1 1 
- 1 1 1   1   1 123 1 1 123 1 1 123 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1023 1   1 1023 1 1 1023 1 1 1023 1 1   1023 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1023 1 1   1 1 1   1 1 1   1 1023 1   1 1 
+ 1 1 1   1   1 1023 1 1 1023 1 1 1023 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1064,19 +1080,19 @@ latUO2_124{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 124 1 1 124 1 1 124 1 1   1   1 1 
- 1 1 1   124 1 1   1 1 1   1 1 1   1 124 1   1 1 
+ 1 1 1   1   1 1024 1 1 1024 1 1 1024 1 1   1   1 1 
+ 1 1 1   1024 1 1   1 1 1   1 1 1   1 1024 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 124 1   1 124 1 1 124 1 1 124 1 1   124 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 124 1   1 124 1 1 6   1 1 124 1 1   124 1 1 
+ 1 1 1024 1   1 1024 1 1 1024 1 1 1024 1 1   1024 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 124 1   1 124 1 1 124 1 1 124 1 1   124 1 1 
+ 1 1 1024 1   1 1024 1 1 6   1 1 1024 1 1   1024 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   124 1 1   1 1 1   1 1 1   1 124 1   1 1 
- 1 1 1   1   1 124 1 1 124 1 1 124 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1024 1   1 1024 1 1 1024 1 1 1024 1 1   1024 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1024 1 1   1 1 1   1 1 1   1 1024 1   1 1 
+ 1 1 1   1   1 1024 1 1 1024 1 1 1024 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1093,19 +1109,19 @@ latUO2_125{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 125 1 1 125 1 1 125 1 1   1   1 1 
- 1 1 1   125 1 1   1 1 1   1 1 1   1 125 1   1 1 
+ 1 1 1   1   1 1025 1 1 1025 1 1 1025 1 1   1   1 1 
+ 1 1 1   1025 1 1   1 1 1   1 1 1   1 1025 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 125 1   1 125 1 1 125 1 1 125 1 1   125 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 125 1   1 125 1 1 6   1 1 125 1 1   125 1 1 
+ 1 1 1025 1   1 1025 1 1 1025 1 1 1025 1 1   1025 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 125 1   1 125 1 1 125 1 1 125 1 1   125 1 1 
+ 1 1 1025 1   1 1025 1 1 6   1 1 1025 1 1   1025 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   125 1 1   1 1 1   1 1 1   1 125 1   1 1 
- 1 1 1   1   1 125 1 1 125 1 1 125 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1025 1   1 1025 1 1 1025 1 1 1025 1 1   1025 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1025 1 1   1 1 1   1 1 1   1 1025 1   1 1 
+ 1 1 1   1   1 1025 1 1 1025 1 1 1025 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1121,19 +1137,19 @@ latUO2_126{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 126 1 1 126 1 1 126 1 1   1   1 1 
- 1 1 1   126 1 1   1 1 1   1 1 1   1 126 1   1 1 
+ 1 1 1   1   1 1026 1 1 1026 1 1 1026 1 1   1   1 1 
+ 1 1 1   1026 1 1   1 1 1   1 1 1   1 1026 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 126 1   1 126 1 1 126 1 1 126 1 1   126 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 126 1   1 126 1 1 6   1 1 126 1 1   126 1 1 
+ 1 1 1026 1   1 1026 1 1 1026 1 1 1026 1 1   1026 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 126 1   1 126 1 1 126 1 1 126 1 1   126 1 1 
+ 1 1 1026 1   1 1026 1 1 6   1 1 1026 1 1   1026 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   126 1 1   1 1 1   1 1 1   1 126 1   1 1 
- 1 1 1   1   1 126 1 1 126 1 1 126 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1026 1   1 1026 1 1 1026 1 1 1026 1 1   1026 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1026 1 1   1 1 1   1 1 1   1 1026 1   1 1 
+ 1 1 1   1   1 1026 1 1 1026 1 1 1026 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1150,19 +1166,19 @@ latUO2_127{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 127 1 1 127 1 1 127 1 1   1   1 1 
- 1 1 1   127 1 1   1 1 1   1 1 1   1 127 1   1 1 
+ 1 1 1   1   1 1027 1 1 1027 1 1 1027 1 1   1   1 1 
+ 1 1 1   1027 1 1   1 1 1   1 1 1   1 1027 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 127 1   1 127 1 1 127 1 1 127 1 1   127 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 127 1   1 127 1 1 6   1 1 127 1 1   127 1 1 
+ 1 1 1027 1   1 1027 1 1 1027 1 1 1027 1 1   1027 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 127 1   1 127 1 1 127 1 1 127 1 1   127 1 1 
+ 1 1 1027 1   1 1027 1 1 6   1 1 1027 1 1   1027 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   127 1 1   1 1 1   1 1 1   1 127 1   1 1 
- 1 1 1   1   1 127 1 1 127 1 1 127 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1027 1   1 1027 1 1 1027 1 1 1027 1 1   1027 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1027 1 1   1 1 1   1 1 1   1 1027 1   1 1 
+ 1 1 1   1   1 1027 1 1 1027 1 1 1027 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1179,19 +1195,19 @@ latUO2_128{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 128 1 1 128 1 1 128 1 1   1   1 1 
- 1 1 1   128 1 1   1 1 1   1 1 1   1 128 1   1 1 
+ 1 1 1   1   1 1028 1 1 1028 1 1 1028 1 1   1   1 1 
+ 1 1 1   1028 1 1   1 1 1   1 1 1   1 1028 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 128 1   1 128 1 1 128 1 1 128 1 1   128 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 128 1   1 128 1 1 6   1 1 128 1 1   128 1 1 
+ 1 1 1028 1   1 1028 1 1 1028 1 1 1028 1 1   1028 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 128 1   1 128 1 1 128 1 1 128 1 1   128 1 1 
+ 1 1 1028 1   1 1028 1 1 6   1 1 1028 1 1   1028 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   128 1 1   1 1 1   1 1 1   1 128 1   1 1 
- 1 1 1   1   1 128 1 1 128 1 1 128 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1028 1   1 1028 1 1 1028 1 1 1028 1 1   1028 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1028 1 1   1 1 1   1 1 1   1 1028 1   1 1 
+ 1 1 1   1   1 1028 1 1 1028 1 1 1028 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1208,19 +1224,19 @@ latUO2_129{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 129 1 1 129 1 1 129 1 1   1   1 1 
- 1 1 1   129 1 1   1 1 1   1 1 1   1 129 1   1 1 
+ 1 1 1   1   1 1029 1 1 1029 1 1 1029 1 1   1   1 1 
+ 1 1 1   1029 1 1   1 1 1   1 1 1   1 1029 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 129 1   1 129 1 1 129 1 1 129 1 1   129 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 129 1   1 129 1 1 6   1 1 129 1 1   129 1 1 
+ 1 1 1029 1   1 1029 1 1 1029 1 1 1029 1 1   1029 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 129 1   1 129 1 1 129 1 1 129 1 1   129 1 1 
+ 1 1 1029 1   1 1029 1 1 6   1 1 1029 1 1   1029 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   129 1 1   1 1 1   1 1 1   1 129 1   1 1 
- 1 1 1   1   1 129 1 1 129 1 1 129 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1029 1   1 1029 1 1 1029 1 1 1029 1 1   1029 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1029 1 1   1 1 1   1 1 1   1 1029 1   1 1 
+ 1 1 1   1   1 1029 1 1 1029 1 1 1029 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1236,19 +1252,19 @@ latUO2_130{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 130 1 1 130 1 1 130 1 1   1   1 1 
- 1 1 1   130 1 1   1 1 1   1 1 1   1 130 1   1 1 
+ 1 1 1   1   1 1030 1 1 1030 1 1 1030 1 1   1   1 1 
+ 1 1 1   1030 1 1   1 1 1   1 1 1   1 1030 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 130 1   1 130 1 1 130 1 1 130 1 1   130 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 130 1   1 130 1 1 6   1 1 130 1 1   130 1 1 
+ 1 1 1030 1   1 1030 1 1 1030 1 1 1030 1 1   1030 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 130 1   1 130 1 1 130 1 1 130 1 1   130 1 1 
+ 1 1 1030 1   1 1030 1 1 6   1 1 1030 1 1   1030 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   130 1 1   1 1 1   1 1 1   1 130 1   1 1 
- 1 1 1   1   1 130 1 1 130 1 1 130 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1030 1   1 1030 1 1 1030 1 1 1030 1 1   1030 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1030 1 1   1 1 1   1 1 1   1 1030 1   1 1 
+ 1 1 1   1   1 1030 1 1 1030 1 1 1030 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1265,19 +1281,19 @@ latUO2_131{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 131 1 1 131 1 1 131 1 1   1   1 1 
- 1 1 1   131 1 1   1 1 1   1 1 1   1 131 1   1 1 
+ 1 1 1   1   1 1031 1 1 1031 1 1 1031 1 1   1   1 1 
+ 1 1 1   1031 1 1   1 1 1   1 1 1   1 1031 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 131 1   1 131 1 1 131 1 1 131 1 1   131 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 131 1   1 131 1 1 6   1 1 131 1 1   131 1 1 
+ 1 1 1031 1   1 1031 1 1 1031 1 1 1031 1 1   1031 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 131 1   1 131 1 1 131 1 1 131 1 1   131 1 1 
+ 1 1 1031 1   1 1031 1 1 6   1 1 1031 1 1   1031 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   131 1 1   1 1 1   1 1 1   1 131 1   1 1 
- 1 1 1   1   1 131 1 1 131 1 1 131 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1031 1   1 1031 1 1 1031 1 1 1031 1 1   1031 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1031 1 1   1 1 1   1 1 1   1 1031 1   1 1 
+ 1 1 1   1   1 1031 1 1 1031 1 1 1031 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1294,19 +1310,19 @@ latUO2_132{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 132 1 1 132 1 1 132 1 1   1   1 1 
- 1 1 1   132 1 1   1 1 1   1 1 1   1 132 1   1 1 
+ 1 1 1   1   1 1032 1 1 1032 1 1 1032 1 1   1   1 1 
+ 1 1 1   1032 1 1   1 1 1   1 1 1   1 1032 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 132 1   1 132 1 1 132 1 1 132 1 1   132 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 132 1   1 132 1 1 6   1 1 132 1 1   132 1 1 
+ 1 1 1032 1   1 1032 1 1 1032 1 1 1032 1 1   1032 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 132 1   1 132 1 1 132 1 1 132 1 1   132 1 1 
+ 1 1 1032 1   1 1032 1 1 6   1 1 1032 1 1   1032 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   132 1 1   1 1 1   1 1 1   1 132 1   1 1 
- 1 1 1   1   1 132 1 1 132 1 1 132 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1032 1   1 1032 1 1 1032 1 1 1032 1 1   1032 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1032 1 1   1 1 1   1 1 1   1 1032 1   1 1 
+ 1 1 1   1   1 1032 1 1 1032 1 1 1032 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1323,19 +1339,19 @@ latUO2_133{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 133 1 1 133 1 1 133 1 1   1   1 1 
- 1 1 1   133 1 1   1 1 1   1 1 1   1 133 1   1 1 
+ 1 1 1   1   1 1033 1 1 1033 1 1 1033 1 1   1   1 1 
+ 1 1 1   1033 1 1   1 1 1   1 1 1   1 1033 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 133 1   1 133 1 1 133 1 1 133 1 1   133 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 133 1   1 133 1 1 6   1 1 133 1 1   133 1 1 
+ 1 1 1033 1   1 1033 1 1 1033 1 1 1033 1 1   1033 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 133 1   1 133 1 1 133 1 1 133 1 1   133 1 1 
+ 1 1 1033 1   1 1033 1 1 6   1 1 1033 1 1   1033 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   133 1 1   1 1 1   1 1 1   1 133 1   1 1 
- 1 1 1   1   1 133 1 1 133 1 1 133 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1033 1   1 1033 1 1 1033 1 1 1033 1 1   1033 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1033 1 1   1 1 1   1 1 1   1 1033 1   1 1 
+ 1 1 1   1   1 1033 1 1 1033 1 1 1033 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1352,19 +1368,19 @@ latUO2_134{
 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1
- 1 1 1   1   1 134 1 1 134 1 1 134 1 1   1   1 1 
- 1 1 1   134 1 1   1 1 1   1 1 1   1 134 1   1 1 
+ 1 1 1   1   1 1034 1 1 1034 1 1 1034 1 1   1   1 1 
+ 1 1 1   1034 1 1   1 1 1   1 1 1   1 1034 1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 134 1   1 134 1 1 134 1 1 134 1 1   134 1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 134 1   1 134 1 1 6   1 1 134 1 1   134 1 1 
+ 1 1 1034 1   1 1034 1 1 1034 1 1 1034 1 1   1034 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 134 1   1 134 1 1 134 1 1 134 1 1   134 1 1 
+ 1 1 1034 1   1 1034 1 1 6   1 1 1034 1 1   1034 1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
- 1 1 1   134 1 1   1 1 1   1 1 1   1 134 1   1 1 
- 1 1 1   1   1 134 1 1 134 1 1 134 1 1   1   1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1034 1   1 1034 1 1 1034 1 1 1034 1 1   1034 1 1 
+ 1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
+ 1 1 1   1034 1 1   1 1 1   1 1 1   1 1034 1   1 1 
+ 1 1 1   1   1 1034 1 1 1034 1 1 1034 1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
  1 1 1   1   1 1   1 1 1   1 1 1   1 1   1   1 1 
 );
@@ -1382,19 +1398,19 @@ latMOX_201{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 201 4 4 201 4 4 201 4 4   4   4 3 
- 3 4 4   201 4 5   5 5 5   5 5 5   4 201 4   4 3 
+ 3 4 4   4   4 2001 4 4 2001 4 4 2001 4 4   4   4 3 
+ 3 4 4   2001 4 5   5 5 5   5 5 5   4 2001 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 201 5   5 201 5 5 201 5 5 201 5 5   201 4 3 
+ 3 4 2001 5   5 2001 5 5 2001 5 5 2001 5 5   2001 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 201 5   5 201 5 5 6   5 5 201 5 5   201 4 3 
+ 3 4 2001 5   5 2001 5 5 6   5 5 2001 5 5   2001 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 201 5   5 201 5 5 201 5 5 201 5 5   201 4 3 
+ 3 4 2001 5   5 2001 5 5 2001 5 5 2001 5 5   2001 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   201 4 5   5 5 5   5 5 5   4 201 4   4 3 
- 3 4 4   4   4 201 4 4 201 4 4 201 4 4   4   4 3 
+ 3 4 4   2001 4 5   5 5 5   5 5 5   4 2001 4   4 3 
+ 3 4 4   4   4 2001 4 4 2001 4 4 2001 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1410,19 +1426,19 @@ latMOX_202{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 202 4 4 202 4 4 202 4 4   4   4 3 
- 3 4 4   202 4 5   5 5 5   5 5 5   4 202 4   4 3 
+ 3 4 4   4   4 2002 4 4 2002 4 4 2002 4 4   4   4 3 
+ 3 4 4   2002 4 5   5 5 5   5 5 5   4 2002 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 202 5   5 202 5 5 202 5 5 202 5 5   202 4 3 
+ 3 4 2002 5   5 2002 5 5 2002 5 5 2002 5 5   2002 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 202 5   5 202 5 5 6   5 5 202 5 5   202 4 3 
+ 3 4 2002 5   5 2002 5 5 6   5 5 2002 5 5   2002 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 202 5   5 202 5 5 202 5 5 202 5 5   202 4 3 
+ 3 4 2002 5   5 2002 5 5 2002 5 5 2002 5 5   2002 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   202 4 5   5 5 5   5 5 5   4 202 4   4 3 
- 3 4 4   4   4 202 4 4 202 4 4 202 4 4   4   4 3 
+ 3 4 4   2002 4 5   5 5 5   5 5 5   4 2002 4   4 3 
+ 3 4 4   4   4 2002 4 4 2002 4 4 2002 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1438,19 +1454,19 @@ latMOX_203{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 203 4 4 203 4 4 203 4 4   4   4 3 
- 3 4 4   203 4 5   5 5 5   5 5 5   4 203 4   4 3 
+ 3 4 4   4   4 2003 4 4 2003 4 4 2003 4 4   4   4 3 
+ 3 4 4   2003 4 5   5 5 5   5 5 5   4 2003 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 203 5   5 203 5 5 203 5 5 203 5 5   203 4 3 
+ 3 4 2003 5   5 2003 5 5 2003 5 5 2003 5 5   2003 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 203 5   5 203 5 5 6   5 5 203 5 5   203 4 3 
+ 3 4 2003 5   5 2003 5 5 6   5 5 2003 5 5   2003 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 203 5   5 203 5 5 203 5 5 203 5 5   203 4 3 
+ 3 4 2003 5   5 2003 5 5 2003 5 5 2003 5 5   2003 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   203 4 5   5 5 5   5 5 5   4 203 4   4 3 
- 3 4 4   4   4 203 4 4 203 4 4 203 4 4   4   4 3 
+ 3 4 4   2003 4 5   5 5 5   5 5 5   4 2003 4   4 3 
+ 3 4 4   4   4 2003 4 4 2003 4 4 2003 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1466,19 +1482,19 @@ latMOX_204{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 204 4 4 204 4 4 204 4 4   4   4 3 
- 3 4 4   204 4 5   5 5 5   5 5 5   4 204 4   4 3 
+ 3 4 4   4   4 2004 4 4 2004 4 4 2004 4 4   4   4 3 
+ 3 4 4   2004 4 5   5 5 5   5 5 5   4 2004 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 204 5   5 204 5 5 204 5 5 204 5 5   204 4 3 
+ 3 4 2004 5   5 2004 5 5 2004 5 5 2004 5 5   2004 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 204 5   5 204 5 5 6   5 5 204 5 5   204 4 3 
+ 3 4 2004 5   5 2004 5 5 6   5 5 2004 5 5   2004 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 204 5   5 204 5 5 204 5 5 204 5 5   204 4 3 
+ 3 4 2004 5   5 2004 5 5 2004 5 5 2004 5 5   2004 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   204 4 5   5 5 5   5 5 5   4 204 4   4 3 
- 3 4 4   4   4 204 4 4 204 4 4 204 4 4   4   4 3 
+ 3 4 4   2004 4 5   5 5 5   5 5 5   4 2004 4   4 3 
+ 3 4 4   4   4 2004 4 4 2004 4 4 2004 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1494,19 +1510,19 @@ latMOX_205{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 205 4 4 205 4 4 205 4 4   4   4 3 
- 3 4 4   205 4 5   5 5 5   5 5 5   4 205 4   4 3 
+ 3 4 4   4   4 2005 4 4 2005 4 4 2005 4 4   4   4 3 
+ 3 4 4   2005 4 5   5 5 5   5 5 5   4 2005 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 205 5   5 205 5 5 205 5 5 205 5 5   205 4 3 
+ 3 4 2005 5   5 2005 5 5 2005 5 5 2005 5 5   2005 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 205 5   5 205 5 5 6   5 5 205 5 5   205 4 3 
+ 3 4 2005 5   5 2005 5 5 6   5 5 2005 5 5   2005 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 205 5   5 205 5 5 205 5 5 205 5 5   205 4 3 
+ 3 4 2005 5   5 2005 5 5 2005 5 5 2005 5 5   2005 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   205 4 5   5 5 5   5 5 5   4 205 4   4 3 
- 3 4 4   4   4 205 4 4 205 4 4 205 4 4   4   4 3 
+ 3 4 4   2005 4 5   5 5 5   5 5 5   4 2005 4   4 3 
+ 3 4 4   4   4 2005 4 4 2005 4 4 2005 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1522,19 +1538,19 @@ latMOX_206{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 206 4 4 206 4 4 206 4 4   4   4 3 
- 3 4 4   206 4 5   5 5 5   5 5 5   4 206 4   4 3 
+ 3 4 4   4   4 2006 4 4 2006 4 4 2006 4 4   4   4 3 
+ 3 4 4   2006 4 5   5 5 5   5 5 5   4 2006 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 206 5   5 206 5 5 206 5 5 206 5 5   206 4 3 
+ 3 4 2006 5   5 2006 5 5 2006 5 5 2006 5 5   2006 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 206 5   5 206 5 5 6   5 5 206 5 5   206 4 3 
+ 3 4 2006 5   5 2006 5 5 6   5 5 2006 5 5   2006 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 206 5   5 206 5 5 206 5 5 206 5 5   206 4 3 
+ 3 4 2006 5   5 2006 5 5 2006 5 5 2006 5 5   2006 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   206 4 5   5 5 5   5 5 5   4 206 4   4 3 
- 3 4 4   4   4 206 4 4 206 4 4 206 4 4   4   4 3 
+ 3 4 4   2006 4 5   5 5 5   5 5 5   4 2006 4   4 3 
+ 3 4 4   4   4 2006 4 4 2006 4 4 2006 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1550,19 +1566,19 @@ latMOX_207{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 207 4 4 207 4 4 207 4 4   4   4 3 
- 3 4 4   207 4 5   5 5 5   5 5 5   4 207 4   4 3 
+ 3 4 4   4   4 2007 4 4 2007 4 4 2007 4 4   4   4 3 
+ 3 4 4   2007 4 5   5 5 5   5 5 5   4 2007 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 207 5   5 207 5 5 207 5 5 207 5 5   207 4 3 
+ 3 4 2007 5   5 2007 5 5 2007 5 5 2007 5 5   2007 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 207 5   5 207 5 5 6   5 5 207 5 5   207 4 3 
+ 3 4 2007 5   5 2007 5 5 6   5 5 2007 5 5   2007 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 207 5   5 207 5 5 207 5 5 207 5 5   207 4 3 
+ 3 4 2007 5   5 2007 5 5 2007 5 5 2007 5 5   2007 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   207 4 5   5 5 5   5 5 5   4 207 4   4 3 
- 3 4 4   4   4 207 4 4 207 4 4 207 4 4   4   4 3 
+ 3 4 4   2007 4 5   5 5 5   5 5 5   4 2007 4   4 3 
+ 3 4 4   4   4 2007 4 4 2007 4 4 2007 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1578,19 +1594,19 @@ latMOX_208{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 208 4 4 208 4 4 208 4 4   4   4 3 
- 3 4 4   208 4 5   5 5 5   5 5 5   4 208 4   4 3 
+ 3 4 4   4   4 2008 4 4 2008 4 4 2008 4 4   4   4 3 
+ 3 4 4   2008 4 5   5 5 5   5 5 5   4 2008 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 208 5   5 208 5 5 208 5 5 208 5 5   208 4 3 
+ 3 4 2008 5   5 2008 5 5 2008 5 5 2008 5 5   2008 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 208 5   5 208 5 5 6   5 5 208 5 5   208 4 3 
+ 3 4 2008 5   5 2008 5 5 6   5 5 2008 5 5   2008 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 208 5   5 208 5 5 208 5 5 208 5 5   208 4 3 
+ 3 4 2008 5   5 2008 5 5 2008 5 5 2008 5 5   2008 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   208 4 5   5 5 5   5 5 5   4 208 4   4 3 
- 3 4 4   4   4 208 4 4 208 4 4 208 4 4   4   4 3 
+ 3 4 4   2008 4 5   5 5 5   5 5 5   4 2008 4   4 3 
+ 3 4 4   4   4 2008 4 4 2008 4 4 2008 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1606,19 +1622,19 @@ latMOX_209{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 209 4 4 209 4 4 209 4 4   4   4 3 
- 3 4 4   209 4 5   5 5 5   5 5 5   4 209 4   4 3 
+ 3 4 4   4   4 2009 4 4 2009 4 4 2009 4 4   4   4 3 
+ 3 4 4   2009 4 5   5 5 5   5 5 5   4 2009 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 209 5   5 209 5 5 209 5 5 209 5 5   209 4 3 
+ 3 4 2009 5   5 2009 5 5 2009 5 5 2009 5 5   2009 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 209 5   5 209 5 5 6   5 5 209 5 5   209 4 3 
+ 3 4 2009 5   5 2009 5 5 6   5 5 2009 5 5   2009 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 209 5   5 209 5 5 209 5 5 209 5 5   209 4 3 
+ 3 4 2009 5   5 2009 5 5 2009 5 5 2009 5 5   2009 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   209 4 5   5 5 5   5 5 5   4 209 4   4 3 
- 3 4 4   4   4 209 4 4 209 4 4 209 4 4   4   4 3 
+ 3 4 4   2009 4 5   5 5 5   5 5 5   4 2009 4   4 3 
+ 3 4 4   4   4 2009 4 4 2009 4 4 2009 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1634,19 +1650,19 @@ latMOX_210{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 210 4 4 210 4 4 210 4 4   4   4 3 
- 3 4 4   210 4 5   5 5 5   5 5 5   4 210 4   4 3 
+ 3 4 4   4   4 2010 4 4 2010 4 4 2010 4 4   4   4 3 
+ 3 4 4   2010 4 5   5 5 5   5 5 5   4 2010 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 210 5   5 210 5 5 210 5 5 210 5 5   210 4 3 
+ 3 4 2010 5   5 2010 5 5 2010 5 5 2010 5 5   2010 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 210 5   5 210 5 5 6   5 5 210 5 5   210 4 3 
+ 3 4 2010 5   5 2010 5 5 6   5 5 2010 5 5   2010 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 210 5   5 210 5 5 210 5 5 210 5 5   210 4 3 
+ 3 4 2010 5   5 2010 5 5 2010 5 5 2010 5 5   2010 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   210 4 5   5 5 5   5 5 5   4 210 4   4 3 
- 3 4 4   4   4 210 4 4 210 4 4 210 4 4   4   4 3 
+ 3 4 4   2010 4 5   5 5 5   5 5 5   4 2010 4   4 3 
+ 3 4 4   4   4 2010 4 4 2010 4 4 2010 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1662,19 +1678,19 @@ latMOX_211{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 211 4 4 211 4 4 211 4 4   4   4 3 
- 3 4 4   211 4 5   5 5 5   5 5 5   4 211 4   4 3 
+ 3 4 4   4   4 2011 4 4 2011 4 4 2011 4 4   4   4 3 
+ 3 4 4   2011 4 5   5 5 5   5 5 5   4 2011 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 211 5   5 211 5 5 211 5 5 211 5 5   211 4 3 
+ 3 4 2011 5   5 2011 5 5 2011 5 5 2011 5 5   2011 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 211 5   5 211 5 5 6   5 5 211 5 5   211 4 3 
+ 3 4 2011 5   5 2011 5 5 6   5 5 2011 5 5   2011 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 211 5   5 211 5 5 211 5 5 211 5 5   211 4 3 
+ 3 4 2011 5   5 2011 5 5 2011 5 5 2011 5 5   2011 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   211 4 5   5 5 5   5 5 5   4 211 4   4 3 
- 3 4 4   4   4 211 4 4 211 4 4 211 4 4   4   4 3 
+ 3 4 4   2011 4 5   5 5 5   5 5 5   4 2011 4   4 3 
+ 3 4 4   4   4 2011 4 4 2011 4 4 2011 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1690,19 +1706,19 @@ latMOX_212{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 212 4 4 212 4 4 212 4 4   4   4 3 
- 3 4 4   212 4 5   5 5 5   5 5 5   4 212 4   4 3 
+ 3 4 4   4   4 2012 4 4 2012 4 4 2012 4 4   4   4 3 
+ 3 4 4   2012 4 5   5 5 5   5 5 5   4 2012 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 212 5   5 212 5 5 212 5 5 212 5 5   212 4 3 
+ 3 4 2012 5   5 2012 5 5 2012 5 5 2012 5 5   2012 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 212 5   5 212 5 5 6   5 5 212 5 5   212 4 3 
+ 3 4 2012 5   5 2012 5 5 6   5 5 2012 5 5   2012 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 212 5   5 212 5 5 212 5 5 212 5 5   212 4 3 
+ 3 4 2012 5   5 2012 5 5 2012 5 5 2012 5 5   2012 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   212 4 5   5 5 5   5 5 5   4 212 4   4 3 
- 3 4 4   4   4 212 4 4 212 4 4 212 4 4   4   4 3 
+ 3 4 4   2012 4 5   5 5 5   5 5 5   4 2012 4   4 3 
+ 3 4 4   4   4 2012 4 4 2012 4 4 2012 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1718,19 +1734,19 @@ latMOX_213{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 213 4 4 213 4 4 213 4 4   4   4 3 
- 3 4 4   213 4 5   5 5 5   5 5 5   4 213 4   4 3 
+ 3 4 4   4   4 2013 4 4 2013 4 4 2013 4 4   4   4 3 
+ 3 4 4   2013 4 5   5 5 5   5 5 5   4 2013 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 213 5   5 213 5 5 213 5 5 213 5 5   213 4 3 
+ 3 4 2013 5   5 2013 5 5 2013 5 5 2013 5 5   2013 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 213 5   5 213 5 5 6   5 5 213 5 5   213 4 3 
+ 3 4 2013 5   5 2013 5 5 6   5 5 2013 5 5   2013 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 213 5   5 213 5 5 213 5 5 213 5 5   213 4 3 
+ 3 4 2013 5   5 2013 5 5 2013 5 5 2013 5 5   2013 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   213 4 5   5 5 5   5 5 5   4 213 4   4 3 
- 3 4 4   4   4 213 4 4 213 4 4 213 4 4   4   4 3 
+ 3 4 4   2013 4 5   5 5 5   5 5 5   4 2013 4   4 3 
+ 3 4 4   4   4 2013 4 4 2013 4 4 2013 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1746,19 +1762,19 @@ latMOX_214{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 214 4 4 214 4 4 214 4 4   4   4 3 
- 3 4 4   214 4 5   5 5 5   5 5 5   4 214 4   4 3 
+ 3 4 4   4   4 2014 4 4 2014 4 4 2014 4 4   4   4 3 
+ 3 4 4   2014 4 5   5 5 5   5 5 5   4 2014 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 214 5   5 214 5 5 214 5 5 214 5 5   214 4 3 
+ 3 4 2014 5   5 2014 5 5 2014 5 5 2014 5 5   2014 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 214 5   5 214 5 5 6   5 5 214 5 5   214 4 3 
+ 3 4 2014 5   5 2014 5 5 6   5 5 2014 5 5   2014 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 214 5   5 214 5 5 214 5 5 214 5 5   214 4 3 
+ 3 4 2014 5   5 2014 5 5 2014 5 5 2014 5 5   2014 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   214 4 5   5 5 5   5 5 5   4 214 4   4 3 
- 3 4 4   4   4 214 4 4 214 4 4 214 4 4   4   4 3 
+ 3 4 4   2014 4 5   5 5 5   5 5 5   4 2014 4   4 3 
+ 3 4 4   4   4 2014 4 4 2014 4 4 2014 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1774,19 +1790,19 @@ latMOX_215{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 215 4 4 215 4 4 215 4 4   4   4 3 
- 3 4 4   215 4 5   5 5 5   5 5 5   4 215 4   4 3 
+ 3 4 4   4   4 2015 4 4 2015 4 4 2015 4 4   4   4 3 
+ 3 4 4   2015 4 5   5 5 5   5 5 5   4 2015 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 215 5   5 215 5 5 215 5 5 215 5 5   215 4 3 
+ 3 4 2015 5   5 2015 5 5 2015 5 5 2015 5 5   2015 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 215 5   5 215 5 5 6   5 5 215 5 5   215 4 3 
+ 3 4 2015 5   5 2015 5 5 6   5 5 2015 5 5   2015 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 215 5   5 215 5 5 215 5 5 215 5 5   215 4 3 
+ 3 4 2015 5   5 2015 5 5 2015 5 5 2015 5 5   2015 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   215 4 5   5 5 5   5 5 5   4 215 4   4 3 
- 3 4 4   4   4 215 4 4 215 4 4 215 4 4   4   4 3 
+ 3 4 4   2015 4 5   5 5 5   5 5 5   4 2015 4   4 3 
+ 3 4 4   4   4 2015 4 4 2015 4 4 2015 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1802,19 +1818,19 @@ latMOX_216{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 216 4 4 216 4 4 216 4 4   4   4 3 
- 3 4 4   216 4 5   5 5 5   5 5 5   4 216 4   4 3 
+ 3 4 4   4   4 2016 4 4 2016 4 4 2016 4 4   4   4 3 
+ 3 4 4   2016 4 5   5 5 5   5 5 5   4 2016 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 216 5   5 216 5 5 216 5 5 216 5 5   216 4 3 
+ 3 4 2016 5   5 2016 5 5 2016 5 5 2016 5 5   2016 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 216 5   5 216 5 5 6   5 5 216 5 5   216 4 3 
+ 3 4 2016 5   5 2016 5 5 6   5 5 2016 5 5   2016 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 216 5   5 216 5 5 216 5 5 216 5 5   216 4 3 
+ 3 4 2016 5   5 2016 5 5 2016 5 5 2016 5 5   2016 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   216 4 5   5 5 5   5 5 5   4 216 4   4 3 
- 3 4 4   4   4 216 4 4 216 4 4 216 4 4   4   4 3 
+ 3 4 4   2016 4 5   5 5 5   5 5 5   4 2016 4   4 3 
+ 3 4 4   4   4 2016 4 4 2016 4 4 2016 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1830,19 +1846,19 @@ latMOX_217{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 217 4 4 217 4 4 217 4 4   4   4 3 
- 3 4 4   217 4 5   5 5 5   5 5 5   4 217 4   4 3 
+ 3 4 4   4   4 2017 4 4 2017 4 4 2017 4 4   4   4 3 
+ 3 4 4   2017 4 5   5 5 5   5 5 5   4 2017 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 217 5   5 217 5 5 217 5 5 217 5 5   217 4 3 
+ 3 4 2017 5   5 2017 5 5 2017 5 5 2017 5 5   2017 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 217 5   5 217 5 5 6   5 5 217 5 5   217 4 3 
+ 3 4 2017 5   5 2017 5 5 6   5 5 2017 5 5   2017 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 217 5   5 217 5 5 217 5 5 217 5 5   217 4 3 
+ 3 4 2017 5   5 2017 5 5 2017 5 5 2017 5 5   2017 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   217 4 5   5 5 5   5 5 5   4 217 4   4 3 
- 3 4 4   4   4 217 4 4 217 4 4 217 4 4   4   4 3 
+ 3 4 4   2017 4 5   5 5 5   5 5 5   4 2017 4   4 3 
+ 3 4 4   4   4 2017 4 4 2017 4 4 2017 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1858,19 +1874,19 @@ latMOX_218{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 218 4 4 218 4 4 218 4 4   4   4 3 
- 3 4 4   218 4 5   5 5 5   5 5 5   4 218 4   4 3 
+ 3 4 4   4   4 2018 4 4 2018 4 4 2018 4 4   4   4 3 
+ 3 4 4   2018 4 5   5 5 5   5 5 5   4 2018 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 218 5   5 218 5 5 218 5 5 218 5 5   218 4 3 
+ 3 4 2018 5   5 2018 5 5 2018 5 5 2018 5 5   2018 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 218 5   5 218 5 5 6   5 5 218 5 5   218 4 3 
+ 3 4 2018 5   5 2018 5 5 6   5 5 2018 5 5   2018 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 218 5   5 218 5 5 218 5 5 218 5 5   218 4 3 
+ 3 4 2018 5   5 2018 5 5 2018 5 5 2018 5 5   2018 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   218 4 5   5 5 5   5 5 5   4 218 4   4 3 
- 3 4 4   4   4 218 4 4 218 4 4 218 4 4   4   4 3 
+ 3 4 4   2018 4 5   5 5 5   5 5 5   4 2018 4   4 3 
+ 3 4 4   4   4 2018 4 4 2018 4 4 2018 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1886,19 +1902,19 @@ latMOX_219{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 219 4 4 219 4 4 219 4 4   4   4 3 
- 3 4 4   219 4 5   5 5 5   5 5 5   4 219 4   4 3 
+ 3 4 4   4   4 2019 4 4 2019 4 4 2019 4 4   4   4 3 
+ 3 4 4   2019 4 5   5 5 5   5 5 5   4 2019 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 219 5   5 219 5 5 219 5 5 219 5 5   219 4 3 
+ 3 4 2019 5   5 2019 5 5 2019 5 5 2019 5 5   2019 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 219 5   5 219 5 5 6   5 5 219 5 5   219 4 3 
+ 3 4 2019 5   5 2019 5 5 6   5 5 2019 5 5   2019 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 219 5   5 219 5 5 219 5 5 219 5 5   219 4 3 
+ 3 4 2019 5   5 2019 5 5 2019 5 5 2019 5 5   2019 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   219 4 5   5 5 5   5 5 5   4 219 4   4 3 
- 3 4 4   4   4 219 4 4 219 4 4 219 4 4   4   4 3 
+ 3 4 4   2019 4 5   5 5 5   5 5 5   4 2019 4   4 3 
+ 3 4 4   4   4 2019 4 4 2019 4 4 2019 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1914,19 +1930,19 @@ latMOX_220{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 220 4 4 220 4 4 220 4 4   4   4 3 
- 3 4 4   220 4 5   5 5 5   5 5 5   4 220 4   4 3 
+ 3 4 4   4   4 2020 4 4 2020 4 4 2020 4 4   4   4 3 
+ 3 4 4   2020 4 5   5 5 5   5 5 5   4 2020 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 220 5   5 220 5 5 220 5 5 220 5 5   220 4 3 
+ 3 4 2020 5   5 2020 5 5 2020 5 5 2020 5 5   2020 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 220 5   5 220 5 5 6   5 5 220 5 5   220 4 3 
+ 3 4 2020 5   5 2020 5 5 6   5 5 2020 5 5   2020 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 220 5   5 220 5 5 220 5 5 220 5 5   220 4 3 
+ 3 4 2020 5   5 2020 5 5 2020 5 5 2020 5 5   2020 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   220 4 5   5 5 5   5 5 5   4 220 4   4 3 
- 3 4 4   4   4 220 4 4 220 4 4 220 4 4   4   4 3 
+ 3 4 4   2020 4 5   5 5 5   5 5 5   4 2020 4   4 3 
+ 3 4 4   4   4 2020 4 4 2020 4 4 2020 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1942,19 +1958,19 @@ latMOX_221{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 221 4 4 221 4 4 221 4 4   4   4 3 
- 3 4 4   221 4 5   5 5 5   5 5 5   4 221 4   4 3 
+ 3 4 4   4   4 2021 4 4 2021 4 4 2021 4 4   4   4 3 
+ 3 4 4   2021 4 5   5 5 5   5 5 5   4 2021 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 221 5   5 221 5 5 221 5 5 221 5 5   221 4 3 
+ 3 4 2021 5   5 2021 5 5 2021 5 5 2021 5 5   2021 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 221 5   5 221 5 5 6   5 5 221 5 5   221 4 3 
+ 3 4 2021 5   5 2021 5 5 6   5 5 2021 5 5   2021 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 221 5   5 221 5 5 221 5 5 221 5 5   221 4 3 
+ 3 4 2021 5   5 2021 5 5 2021 5 5 2021 5 5   2021 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   221 4 5   5 5 5   5 5 5   4 221 4   4 3 
- 3 4 4   4   4 221 4 4 221 4 4 221 4 4   4   4 3 
+ 3 4 4   2021 4 5   5 5 5   5 5 5   4 2021 4   4 3 
+ 3 4 4   4   4 2021 4 4 2021 4 4 2021 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1970,19 +1986,19 @@ latMOX_222{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 222 4 4 222 4 4 222 4 4   4   4 3 
- 3 4 4   222 4 5   5 5 5   5 5 5   4 222 4   4 3 
+ 3 4 4   4   4 2022 4 4 2022 4 4 2022 4 4   4   4 3 
+ 3 4 4   2022 4 5   5 5 5   5 5 5   4 2022 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 222 5   5 222 5 5 222 5 5 222 5 5   222 4 3 
+ 3 4 2022 5   5 2022 5 5 2022 5 5 2022 5 5   2022 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 222 5   5 222 5 5 6   5 5 222 5 5   222 4 3 
+ 3 4 2022 5   5 2022 5 5 6   5 5 2022 5 5   2022 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 222 5   5 222 5 5 222 5 5 222 5 5   222 4 3 
+ 3 4 2022 5   5 2022 5 5 2022 5 5 2022 5 5   2022 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   222 4 5   5 5 5   5 5 5   4 222 4   4 3 
- 3 4 4   4   4 222 4 4 222 4 4 222 4 4   4   4 3 
+ 3 4 4   2022 4 5   5 5 5   5 5 5   4 2022 4   4 3 
+ 3 4 4   4   4 2022 4 4 2022 4 4 2022 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -1998,19 +2014,19 @@ latMOX_223{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 223 4 4 223 4 4 223 4 4   4   4 3 
- 3 4 4   223 4 5   5 5 5   5 5 5   4 223 4   4 3 
+ 3 4 4   4   4 2023 4 4 2023 4 4 2023 4 4   4   4 3 
+ 3 4 4   2023 4 5   5 5 5   5 5 5   4 2023 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 223 5   5 223 5 5 223 5 5 223 5 5   223 4 3 
+ 3 4 2023 5   5 2023 5 5 2023 5 5 2023 5 5   2023 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 223 5   5 223 5 5 6   5 5 223 5 5   223 4 3 
+ 3 4 2023 5   5 2023 5 5 6   5 5 2023 5 5   2023 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 223 5   5 223 5 5 223 5 5 223 5 5   223 4 3 
+ 3 4 2023 5   5 2023 5 5 2023 5 5 2023 5 5   2023 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   223 4 5   5 5 5   5 5 5   4 223 4   4 3 
- 3 4 4   4   4 223 4 4 223 4 4 223 4 4   4   4 3 
+ 3 4 4   2023 4 5   5 5 5   5 5 5   4 2023 4   4 3 
+ 3 4 4   4   4 2023 4 4 2023 4 4 2023 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2026,19 +2042,19 @@ latMOX_224{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 224 4 4 224 4 4 224 4 4   4   4 3 
- 3 4 4   224 4 5   5 5 5   5 5 5   4 224 4   4 3 
+ 3 4 4   4   4 2024 4 4 2024 4 4 2024 4 4   4   4 3 
+ 3 4 4   2024 4 5   5 5 5   5 5 5   4 2024 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 224 5   5 224 5 5 224 5 5 224 5 5   224 4 3 
+ 3 4 2024 5   5 2024 5 5 2024 5 5 2024 5 5   2024 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 224 5   5 224 5 5 6   5 5 224 5 5   224 4 3 
+ 3 4 2024 5   5 2024 5 5 6   5 5 2024 5 5   2024 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 224 5   5 224 5 5 224 5 5 224 5 5   224 4 3 
+ 3 4 2024 5   5 2024 5 5 2024 5 5 2024 5 5   2024 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   224 4 5   5 5 5   5 5 5   4 224 4   4 3 
- 3 4 4   4   4 224 4 4 224 4 4 224 4 4   4   4 3 
+ 3 4 4   2024 4 5   5 5 5   5 5 5   4 2024 4   4 3 
+ 3 4 4   4   4 2024 4 4 2024 4 4 2024 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2054,19 +2070,19 @@ latMOX_225{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 225 4 4 225 4 4 225 4 4   4   4 3 
- 3 4 4   225 4 5   5 5 5   5 5 5   4 225 4   4 3 
+ 3 4 4   4   4 2025 4 4 2025 4 4 2025 4 4   4   4 3 
+ 3 4 4   2025 4 5   5 5 5   5 5 5   4 2025 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 225 5   5 225 5 5 225 5 5 225 5 5   225 4 3 
+ 3 4 2025 5   5 2025 5 5 2025 5 5 2025 5 5   2025 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 225 5   5 225 5 5 6   5 5 225 5 5   225 4 3 
+ 3 4 2025 5   5 2025 5 5 6   5 5 2025 5 5   2025 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 225 5   5 225 5 5 225 5 5 225 5 5   225 4 3 
+ 3 4 2025 5   5 2025 5 5 2025 5 5 2025 5 5   2025 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   225 4 5   5 5 5   5 5 5   4 225 4   4 3 
- 3 4 4   4   4 225 4 4 225 4 4 225 4 4   4   4 3 
+ 3 4 4   2025 4 5   5 5 5   5 5 5   4 2025 4   4 3 
+ 3 4 4   4   4 2025 4 4 2025 4 4 2025 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2082,19 +2098,19 @@ latMOX_226{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 226 4 4 226 4 4 226 4 4   4   4 3 
- 3 4 4   226 4 5   5 5 5   5 5 5   4 226 4   4 3 
+ 3 4 4   4   4 2026 4 4 2026 4 4 2026 4 4   4   4 3 
+ 3 4 4   2026 4 5   5 5 5   5 5 5   4 2026 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 226 5   5 226 5 5 226 5 5 226 5 5   226 4 3 
+ 3 4 2026 5   5 2026 5 5 2026 5 5 2026 5 5   2026 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 226 5   5 226 5 5 6   5 5 226 5 5   226 4 3 
+ 3 4 2026 5   5 2026 5 5 6   5 5 2026 5 5   2026 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 226 5   5 226 5 5 226 5 5 226 5 5   226 4 3 
+ 3 4 2026 5   5 2026 5 5 2026 5 5 2026 5 5   2026 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   226 4 5   5 5 5   5 5 5   4 226 4   4 3 
- 3 4 4   4   4 226 4 4 226 4 4 226 4 4   4   4 3 
+ 3 4 4   2026 4 5   5 5 5   5 5 5   4 2026 4   4 3 
+ 3 4 4   4   4 2026 4 4 2026 4 4 2026 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2110,19 +2126,19 @@ latMOX_227{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 227 4 4 227 4 4 227 4 4   4   4 3 
- 3 4 4   227 4 5   5 5 5   5 5 5   4 227 4   4 3 
+ 3 4 4   4   4 2027 4 4 2027 4 4 2027 4 4   4   4 3 
+ 3 4 4   2027 4 5   5 5 5   5 5 5   4 2027 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 227 5   5 227 5 5 227 5 5 227 5 5   227 4 3 
+ 3 4 2027 5   5 2027 5 5 2027 5 5 2027 5 5   2027 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 227 5   5 227 5 5 6   5 5 227 5 5   227 4 3 
+ 3 4 2027 5   5 2027 5 5 6   5 5 2027 5 5   2027 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 227 5   5 227 5 5 227 5 5 227 5 5   227 4 3 
+ 3 4 2027 5   5 2027 5 5 2027 5 5 2027 5 5   2027 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   227 4 5   5 5 5   5 5 5   4 227 4   4 3 
- 3 4 4   4   4 227 4 4 227 4 4 227 4 4   4   4 3 
+ 3 4 4   2027 4 5   5 5 5   5 5 5   4 2027 4   4 3 
+ 3 4 4   4   4 2027 4 4 2027 4 4 2027 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2138,19 +2154,19 @@ latMOX_228{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 228 4 4 228 4 4 228 4 4   4   4 3 
- 3 4 4   228 4 5   5 5 5   5 5 5   4 228 4   4 3 
+ 3 4 4   4   4 2028 4 4 2028 4 4 2028 4 4   4   4 3 
+ 3 4 4   2028 4 5   5 5 5   5 5 5   4 2028 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 228 5   5 228 5 5 228 5 5 228 5 5   228 4 3 
+ 3 4 2028 5   5 2028 5 5 2028 5 5 2028 5 5   2028 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 228 5   5 228 5 5 6   5 5 228 5 5   228 4 3 
+ 3 4 2028 5   5 2028 5 5 6   5 5 2028 5 5   2028 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 228 5   5 228 5 5 228 5 5 228 5 5   228 4 3 
+ 3 4 2028 5   5 2028 5 5 2028 5 5 2028 5 5   2028 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   228 4 5   5 5 5   5 5 5   4 228 4   4 3 
- 3 4 4   4   4 228 4 4 228 4 4 228 4 4   4   4 3 
+ 3 4 4   2028 4 5   5 5 5   5 5 5   4 2028 4   4 3 
+ 3 4 4   4   4 2028 4 4 2028 4 4 2028 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2166,19 +2182,19 @@ latMOX_229{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 229 4 4 229 4 4 229 4 4   4   4 3 
- 3 4 4   229 4 5   5 5 5   5 5 5   4 229 4   4 3 
+ 3 4 4   4   4 2029 4 4 2029 4 4 2029 4 4   4   4 3 
+ 3 4 4   2029 4 5   5 5 5   5 5 5   4 2029 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 229 5   5 229 5 5 229 5 5 229 5 5   229 4 3 
+ 3 4 2029 5   5 2029 5 5 2029 5 5 2029 5 5   2029 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 229 5   5 229 5 5 6   5 5 229 5 5   229 4 3 
+ 3 4 2029 5   5 2029 5 5 6   5 5 2029 5 5   2029 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 229 5   5 229 5 5 229 5 5 229 5 5   229 4 3 
+ 3 4 2029 5   5 2029 5 5 2029 5 5 2029 5 5   2029 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   229 4 5   5 5 5   5 5 5   4 229 4   4 3 
- 3 4 4   4   4 229 4 4 229 4 4 229 4 4   4   4 3 
+ 3 4 4   2029 4 5   5 5 5   5 5 5   4 2029 4   4 3 
+ 3 4 4   4   4 2029 4 4 2029 4 4 2029 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2194,19 +2210,19 @@ latMOX_230{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 230 4 4 230 4 4 230 4 4   4   4 3 
- 3 4 4   230 4 5   5 5 5   5 5 5   4 230 4   4 3 
+ 3 4 4   4   4 2030 4 4 2030 4 4 2030 4 4   4   4 3 
+ 3 4 4   2030 4 5   5 5 5   5 5 5   4 2030 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 230 5   5 230 5 5 230 5 5 230 5 5   230 4 3 
+ 3 4 2030 5   5 2030 5 5 2030 5 5 2030 5 5   2030 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 230 5   5 230 5 5 6   5 5 230 5 5   230 4 3 
+ 3 4 2030 5   5 2030 5 5 6   5 5 2030 5 5   2030 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 230 5   5 230 5 5 230 5 5 230 5 5   230 4 3 
+ 3 4 2030 5   5 2030 5 5 2030 5 5 2030 5 5   2030 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   230 4 5   5 5 5   5 5 5   4 230 4   4 3 
- 3 4 4   4   4 230 4 4 230 4 4 230 4 4   4   4 3 
+ 3 4 4   2030 4 5   5 5 5   5 5 5   4 2030 4   4 3 
+ 3 4 4   4   4 2030 4 4 2030 4 4 2030 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2222,19 +2238,19 @@ latMOX_231{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 231 4 4 231 4 4 231 4 4   4   4 3 
- 3 4 4   231 4 5   5 5 5   5 5 5   4 231 4   4 3 
+ 3 4 4   4   4 2031 4 4 2031 4 4 2031 4 4   4   4 3 
+ 3 4 4   2031 4 5   5 5 5   5 5 5   4 2031 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 231 5   5 231 5 5 231 5 5 231 5 5   231 4 3 
+ 3 4 2031 5   5 2031 5 5 2031 5 5 2031 5 5   2031 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 231 5   5 231 5 5 6   5 5 231 5 5   231 4 3 
+ 3 4 2031 5   5 2031 5 5 6   5 5 2031 5 5   2031 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 231 5   5 231 5 5 231 5 5 231 5 5   231 4 3 
+ 3 4 2031 5   5 2031 5 5 2031 5 5 2031 5 5   2031 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   231 4 5   5 5 5   5 5 5   4 231 4   4 3 
- 3 4 4   4   4 231 4 4 231 4 4 231 4 4   4   4 3 
+ 3 4 4   2031 4 5   5 5 5   5 5 5   4 2031 4   4 3 
+ 3 4 4   4   4 2031 4 4 2031 4 4 2031 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2250,19 +2266,19 @@ latMOX_232{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 232 4 4 232 4 4 232 4 4   4   4 3 
- 3 4 4   232 4 5   5 5 5   5 5 5   4 232 4   4 3 
+ 3 4 4   4   4 2032 4 4 2032 4 4 2032 4 4   4   4 3 
+ 3 4 4   2032 4 5   5 5 5   5 5 5   4 2032 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 232 5   5 232 5 5 232 5 5 232 5 5   232 4 3 
+ 3 4 2032 5   5 2032 5 5 2032 5 5 2032 5 5   2032 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 232 5   5 232 5 5 6   5 5 232 5 5   232 4 3 
+ 3 4 2032 5   5 2032 5 5 6   5 5 2032 5 5   2032 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 232 5   5 232 5 5 232 5 5 232 5 5   232 4 3 
+ 3 4 2032 5   5 2032 5 5 2032 5 5 2032 5 5   2032 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   232 4 5   5 5 5   5 5 5   4 232 4   4 3 
- 3 4 4   4   4 232 4 4 232 4 4 232 4 4   4   4 3 
+ 3 4 4   2032 4 5   5 5 5   5 5 5   4 2032 4   4 3 
+ 3 4 4   4   4 2032 4 4 2032 4 4 2032 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2278,19 +2294,19 @@ latMOX_233{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 233 4 4 233 4 4 233 4 4   4   4 3 
- 3 4 4   233 4 5   5 5 5   5 5 5   4 233 4   4 3 
+ 3 4 4   4   4 2033 4 4 2033 4 4 2033 4 4   4   4 3 
+ 3 4 4   2033 4 5   5 5 5   5 5 5   4 2033 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 233 5   5 233 5 5 233 5 5 233 5 5   233 4 3 
+ 3 4 2033 5   5 2033 5 5 2033 5 5 2033 5 5   2033 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 233 5   5 233 5 5 6   5 5 233 5 5   233 4 3 
+ 3 4 2033 5   5 2033 5 5 6   5 5 2033 5 5   2033 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 233 5   5 233 5 5 233 5 5 233 5 5   233 4 3 
+ 3 4 2033 5   5 2033 5 5 2033 5 5 2033 5 5   2033 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   233 4 5   5 5 5   5 5 5   4 233 4   4 3 
- 3 4 4   4   4 233 4 4 233 4 4 233 4 4   4   4 3 
+ 3 4 4   2033 4 5   5 5 5   5 5 5   4 2033 4   4 3 
+ 3 4 4   4   4 2033 4 4 2033 4 4 2033 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2306,19 +2322,19 @@ latMOX_234{
       map ( 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
- 3 4 4   4   4 234 4 4 234 4 4 234 4 4   4   4 3 
- 3 4 4   234 4 5   5 5 5   5 5 5   4 234 4   4 3 
+ 3 4 4   4   4 2034 4 4 2034 4 4 2034 4 4   4   4 3 
+ 3 4 4   2034 4 5   5 5 5   5 5 5   4 2034 4   4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 234 5   5 234 5 5 234 5 5 234 5 5   234 4 3 
+ 3 4 2034 5   5 2034 5 5 2034 5 5 2034 5 5   2034 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 234 5   5 234 5 5 6   5 5 234 5 5   234 4 3 
+ 3 4 2034 5   5 2034 5 5 6   5 5 2034 5 5   2034 4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
  3 4 4   5   5 5   5 5 5   5 5 5   5 5   4   4 3 
- 3 4 234 5   5 234 5 5 234 5 5 234 5 5   234 4 3 
+ 3 4 2034 5   5 2034 5 5 2034 5 5 2034 5 5   2034 4 3 
  3 4 4   4   5 5   5 5 5   5 5 5   5 4   4   4 3 
- 3 4 4   234 4 5   5 5 5   5 5 5   4 234 4   4 3 
- 3 4 4   4   4 234 4 4 234 4 4 234 4 4   4   4 3 
+ 3 4 4   2034 4 5   5 5 5   5 5 5   4 2034 4   4 3 
+ 3 4 4   4   4 2034 4 4 2034 4 4 2034 4 4   4   4 3 
  3 4 4   4   4 4   4 4 4   4 4 4   4 4   4   4 3 
  3 3 3   3   3 3   3 3 3   3 3 3   3 3   3   3 3   
 );
@@ -2447,7 +2463,7 @@ latCore
 211 10 60
 50 50 70
 
-1112 20 60
+112 20 60
 212 10 60
 50 50 70
 

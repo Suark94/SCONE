@@ -19,6 +19,10 @@ convPrec 0.000002;    // threshold value for convergence
 //reduceLines 1;      // reduce printed output lines during run
 tOut 100;             // number of printed time steps
 
+transient {
+    variation1 {crosssection fission; material fuel; transientType step; magnitude 0.001; timeStart 1; }
+    }
+    
 geometry {
     type geometryStd;
     boundary (0 0 1 1 1 1);

@@ -1648,7 +1648,7 @@ contains
       
         do i = 1, self % nG * self % nT
             idx = baseIdx + i
-            total = self % sigmaT(baseIdx0 + i)
+!             total = self % sigmaT(baseIdx0 + i)
             
             self % scalarFlux(idx) = self % scalarFlux(idx) + self % source(idx)
             
